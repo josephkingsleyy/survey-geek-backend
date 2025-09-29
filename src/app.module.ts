@@ -5,10 +5,11 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
+import { TicketModule } from './ticket/ticket.module';
 
 @Global()
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, TicketModule],
   controllers: [AppController],
   providers: [AppService,
     {

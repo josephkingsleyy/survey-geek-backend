@@ -7,7 +7,6 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 
-@Public()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
@@ -36,7 +35,6 @@ export class AuthController {
     return this.authService.getProfile(userId);
   }
 
-  // --- Update account
   @Patch(':id')
   async updateAccount(
     @Param('id') id: string,

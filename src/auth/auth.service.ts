@@ -99,7 +99,8 @@ export class AuthService {
       include: {
         billing: true,         // 1:1 relation
         surveyInterest: true, // 1:M
-        ticket: true,         // 1:M
+        createdTickets: true,         // 1:M
+        assignedTickets: true,         // 1:M
         payment: true,        // 1:M
       },
     });
