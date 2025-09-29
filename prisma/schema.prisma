@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+  //output   = "../generated/prisma"
+
+
+datasource db {
+  provider = "postgresql" // or "mysql" | "sqlite" | "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Billing {
+  id        Int       @id @default(autoincrement())
+  planName  String
+  amount    Float
+  currency  String
+  expiresAt DateTime?
+  User      User?
+}
+
+model Payment {
+  id          Int       @id @default(autoincrement())
+  amount      Float
+  currency    String    @default("NGN")
+  status      String    @default("pending")
+  method      String?
+  reference   String    @unique
+  description String?
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  userId      Int
+  User        User      @relation(fields: [userId], references: [id])
+}
+
+model SurveyInterest {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  User User[] @relation("UserInterests")
+}
+
+model Ticket {
+  id          Int      @id @default(autoincrement())
+  subject     String
+  description String?
+  status      String   @default("open")
+  priority    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  userId      Int
+  User        User     @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id                        Int              @id @default(autoincrement())
+  email                     String           @unique
+  emailVerifiedAt           DateTime?
+  password                  String?
+  username                  String?
+  phoneNumber               String?
+  alternatePhoneNumber      String?
+  country                   String?
+  state                     String?
+  employmentStatus          String?
+  mostPreferredCommsChannel String?
+  howYouGotToKnowUs         String?
+  profilePhoto              String?
+  dob                       DateTime?
+  gender                    String?
+  location                  String?
+  occupation                String?
+  role                      String?
+  isActive                  Boolean?        @default(false)
+  otp                  String?        
+  otpExpiresAt                  DateTime?        
+  twoFactorAuth             String?
+  lastLogin                 String?
+  ipAddress                 String?
+  browserAgent              String?
+  subscriptionPlan          String?
+  subscriptionPlanExpireAt  String?
+  billingId                 Int?             @unique
+  bio                       String?
+  referralCode              String?
+  softDelete                Boolean?  @default(false)
+  firstName                 String?
+  lastName                  String?
+  countryCode               String?
+  stateCode                 String?
+  subDivisionCode           String?
+  subDivisionName           String?
+  address                   String?
+  hasOnboarded              Boolean?
+  createdAt                 DateTime         @default(now())
+  payment                   Payment[]
+  ticket                    Ticket[]
+  billing                   Billing?         @relation(fields: [billingId], references: [id]) 
+  surveyInterest            SurveyInterest[] @relation("UserInterests")
+}
