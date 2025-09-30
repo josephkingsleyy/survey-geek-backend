@@ -86,8 +86,8 @@ model User {
   alternatePhoneNumber      String?
   country                   String?
   state                     String?
-  employmentStatus          String?
-  mostPreferredCommsChannel String?
+  employmentStatus          String? //enum
+  mostPreferredCommsChannel String? //enum
   howYouGotToKnowUs         String?
   profilePhoto              String?
   dob                       DateTime?
