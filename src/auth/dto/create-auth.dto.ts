@@ -3,7 +3,7 @@
 
 
 
-import { IsEmail, isString, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, isString, IsString, MinLength } from 'class-validator';
 
 export class SignupDto {
   @IsEmail()
@@ -30,6 +30,10 @@ export class CreateAuthDto {
 
   @IsString()
   lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  role?: string;
 }
 
 export class LoginAuthDto {

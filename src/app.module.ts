@@ -6,10 +6,13 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TicketModule } from './ticket/ticket.module';
+import { SurveyModule } from './survey/survey.module';
+import { QuestionModule } from './question/question.module';
+import { ResponseModule } from './response/response.module';
 
 @Global()
 @Module({
-  imports: [PrismaModule, AuthModule, TicketModule],
+  imports: [PrismaModule, AuthModule, TicketModule, SurveyModule, QuestionModule, ResponseModule],
   controllers: [AppController],
   providers: [AppService,
     {

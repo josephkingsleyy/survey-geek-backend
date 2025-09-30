@@ -11,12 +11,13 @@ import { CreateAuthDto, LoginAuthDto } from './dto/create-auth.dto';
 import { sendEmail } from 'src/common/utils/mail-service';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 
+
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async signup(dto: CreateAuthDto) {
     try {
@@ -33,6 +34,7 @@ export class AuthService {
           password: hashed,
           otp,
           otpExpiresAt,
+          role: dto.role,
         },
       });
 
@@ -82,7 +84,7 @@ export class AuthService {
       if (!valid) throw new UnauthorizedException('Invalid credentials');
 
       const token = await this.signToken(user.id, user.email, user.role);
-      return { user, accessToken: token };
+      return { data: user, accessToken: token };
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
       throw new InternalServerErrorException(err.message);
