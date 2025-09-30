@@ -26,4 +26,7 @@ export class CreateResponseDto {
   @IsOptional()
   @IsString()
   uploadUrl?: string; // for uploads
+
+  @IsInt()
+  surveyId?: number;
 }
