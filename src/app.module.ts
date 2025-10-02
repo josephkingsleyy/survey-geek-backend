@@ -1,7 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -11,13 +10,14 @@ import { QuestionModule } from './question/question.module';
 import { ResponseModule } from './response/response.module';
 import { BillingModule } from './billing/billing.module';
 import { PaymentModule } from './payment/payment.module';
-import { Scheduler } from 'rxjs';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronsModule } from './crons/crons.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Global()
 @Module({
-  imports: [PrismaModule,
+  imports: [
+    PrismaModule,
     AuthModule,
     TicketModule,
     SurveyModule,
@@ -26,13 +26,15 @@ import { CronsModule } from './crons/crons.module';
     BillingModule,
     PaymentModule,
     ScheduleModule.forRoot(),
-    CronsModule],
+    CronsModule,
+  ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
-    }
+    },
   ],
 })
 export class AppModule { }
