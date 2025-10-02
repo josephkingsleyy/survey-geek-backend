@@ -31,22 +31,28 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@CurrentUser('sub') userId: number) {
+  async getProfile(@CurrentUser('userId') userId: number) {
     return this.authService.getProfile(userId);
   }
 
-  @Patch(':id')
+  @Patch('update')
   async updateAccount(
-    @Param('id') id: string,
     @Body() updateDto: UpdateAuthDto,
+    @CurrentUser('sub') sub: number,
   ) {
-    return this.authService.updateAccount(id, updateDto);
+    return this.authService.updateAccount(sub, updateDto);
   }
 
-  // --- Soft delete account (mark as inactive)
-  @Delete('soft/:id')
-  async softDeleteAccount(@Param('id') id: string) {
-    return this.authService.softDeleteAccount(id);
+  @Delete('soft')
+  async softDeleteAccount(@Param('id') id: string,
+    @CurrentUser('sub') sub: number,
+  ) {
+    return this.authService.softDeleteAccount(sub);
+  }
+
+  @Delete('undelete/:id')
+  async undeleteAccount(@Param('id') id: string) {
+    return this.authService.unDeleteAccount(Number(id));
   }
 
   // --- Hard delete account (remove from DB)

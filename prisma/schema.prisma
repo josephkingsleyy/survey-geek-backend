@@ -29,15 +29,17 @@ model Payment {
   description String?
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  
+  updatedAt   DateTime
   userId      Int
   User        User      @relation(fields: [userId], references: [id])
 }
 
 model SurveyInterest {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-  User User[] @relation("UserInterests")
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  User    User[]   @relation("UserInterests")
+  surveys Survey[]
+
 }
 
 enum TicketStatus {
@@ -144,8 +146,9 @@ model User {
   createdTickets  Ticket[] @relation("CreatedTickets") // tickets created by the user
   assignedTickets Ticket[] @relation("AssignedTickets") // tickets assigned to the user
 
-  surveys   Survey[] // surveys created by the user
-  responses Response[] // responses submitted by the user
+  surveys      Survey[] // surveys created by the user
+  responses    Response[] // responses submitted by the user
+  Notification Notification[]
 }
 
 model Survey {
@@ -165,6 +168,8 @@ model Survey {
 
   questions Question[]
   responses Response[]
+
+  surveyInterests SurveyInterest[]
 }
 
 model Question {
@@ -224,7 +229,7 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id])
   title     String
   message   String
-  type      String   // e.g., "payment", "survey", "system"
+  type      String // e.g., "payment", "survey", "system"
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }

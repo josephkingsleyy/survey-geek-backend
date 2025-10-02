@@ -1,33 +1,89 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class SurveyService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService
+  ) { }
 
   async create(createSurveyDto: CreateSurveyDto, userId: number) {
-    const { questions, ...surveyData } = createSurveyDto;
+    try {
+      const { questions, surveyInterestIds, ...surveyData } = createSurveyDto;
 
-    return this.prisma.survey.create({
-      data: {
-        ...surveyData,
-        userId,
-        questions: questions
-          ? {
-            create: questions.map((q) => ({
-              text: q.text,
-              type: q.type,
-              options: q.options ?? [],
-              scaleMin: q.scaleMin,
-              scaleMax: q.scaleMax,
-            })),
-          }
-          : undefined,
-      },
-    });
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // if (!user.isActive) {
+      //   throw new ForbiddenException('User is not allowed to create surveys');
+      // }
+      // 1. Create the survey and link to interests
+      const survey = await this.prisma.survey.create({
+        data: {
+          ...surveyData,
+          userId,
+          questions: questions?.length
+            ? {
+              create: questions.map((q) => ({
+                text: q.text,
+                type: q.type,
+                options: q.options ?? [],
+                scaleMin: q.scaleMin,
+                scaleMax: q.scaleMax,
+              })),
+            }
+            : undefined,
+          surveyInterests: surveyInterestIds?.length
+            ? {
+              connect: surveyInterestIds.map((id) => ({ id })),
+            }
+            : undefined,
+        },
+        include: {
+          surveyInterests: true,
+          questions: true,
+        },
+      });
+
+      // 2. Get all users who are subscribed to ANY of the interests
+      if (surveyInterestIds?.length) {
+        const users = await this.prisma.user.findMany({
+          where: {
+            surveyInterest: {
+              some: { id: { in: surveyInterestIds } },
+            },
+          },
+          select: { id: true },
+        });
+
+        const userIds = users.map((u) => u.id);
+
+        // 3. Send them a notification
+        if (userIds.length > 0) {
+          await this.notificationService.broadcast(userIds, {
+            title: 'New Survey Available',
+            message: `A new survey "${survey.title}" was just published in your interest area.`,
+            type: 'survey',
+          });
+        }
+      }
+
+      return survey;
+    } catch (error) {
+      console.log(error);
+      throw new Error(`Failed to create survey: ${error.message}`);
+    }
+
   }
+
 
   // 🔹 Admin: get all surveys with pagination
   async findAll(page = 1, limit = 10) {

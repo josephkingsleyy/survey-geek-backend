@@ -34,6 +34,10 @@ export class CreateAuthDto {
   @IsString()
   @IsOptional()
   role?: string;
+
+  @IsString()
+  @IsOptional()
+  gender?: string;
 }
 
 export class LoginAuthDto {

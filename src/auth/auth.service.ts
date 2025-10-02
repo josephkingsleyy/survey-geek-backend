@@ -139,10 +139,10 @@ export class AuthService {
     }
   }
 
-  async updateAccount(id: string, updateDto: UpdateAuthDto) {
+  async updateAccount(userId: number, updateDto: UpdateAuthDto) {
     try {
       return await this.prisma.user.update({
-        where: { id: Number(id) },
+        where: { id: userId },
         data: updateDto,
       });
     } catch (err) {
@@ -150,11 +150,21 @@ export class AuthService {
     }
   }
 
-  async softDeleteAccount(id: string) {
+  async softDeleteAccount(id: number) {
     try {
       return await this.prisma.user.update({
-        where: { id: Number(id) },
+        where: { id },
         data: { softDelete: true },
+      });
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+  async unDeleteAccount(id: number) {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: { softDelete: false },
       });
     } catch (err) {
       throw new InternalServerErrorException(err.message);

@@ -21,10 +21,10 @@ export class BillingCronService {
 
     for (const bill of expired) {
       if (bill.userId) {
-        await this.prisma.user.update({
-          where: { id: bill.userId },
-          data: { isActive: false },
-        });
+        // await this.prisma.user.update({
+        //   where: { id: bill.userId },
+        //   data: { isActive: false },
+        // });
         this.logger.warn(
           `Billing ${bill.id} expired → User ${bill.userId} deactivated.`,
         );

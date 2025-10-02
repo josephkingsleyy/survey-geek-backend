@@ -1,12 +1,16 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreatePaymentDto } from './dto/create-payment.dto';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import axios from 'axios';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class PaymentService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService
+  ) { }
 
   async create(dto: CreatePaymentDto, userId: number) {
     // Generate reference
@@ -25,7 +29,7 @@ export class PaymentService {
         method: dto.method,
         reference,
         description: dto.description,
-        updatedAt: new Date(), 
+        updatedAt: new Date(),
         User: { connect: { id: dto.userId } },
       },
     });
@@ -84,6 +88,13 @@ export class PaymentService {
           updatedAt: new Date(),
         },
         include: { User: true },
+      });
+
+      await this.notificationService.create({
+        userId: payment.userId,
+        title: 'Payment Successful',
+        message: `Your payment of ${payment.amount} ${payment.currency} was successful.`,
+        type: 'payment',
       });
 
       return payment;
@@ -176,4 +187,6 @@ export class PaymentService {
       where: { id },
     });
   }
+
+
 }

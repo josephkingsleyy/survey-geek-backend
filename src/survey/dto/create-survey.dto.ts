@@ -11,6 +11,10 @@ import { Type } from 'class-transformer';
 import { CreateQuestionDto } from 'src/question/dto/create-question.dto';
 
 export class CreateSurveyDto {
+  @IsArray()
+  @IsInt({ each: true }) // ✅ ensures each item in array is an integer
+  surveyInterestIds?: number[];
+
   @IsOptional()
   @IsString()
   title?: string;
