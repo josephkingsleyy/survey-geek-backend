@@ -13,8 +13,8 @@ export class GeneralCronService {
   }
 
   // Run every 10s (test)
-  @Cron('*/10 * * * * *')
-  testCron() {
-    this.logger.debug('General test cron running every 10s');
-  }
+  // @Cron('*/10 * * * * *')
+  // testCron() {
+  //   this.logger.debug('General test cron running every 10s');
+  // }
 }
