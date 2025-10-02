@@ -9,10 +9,24 @@ import { TicketModule } from './ticket/ticket.module';
 import { SurveyModule } from './survey/survey.module';
 import { QuestionModule } from './question/question.module';
 import { ResponseModule } from './response/response.module';
+import { BillingModule } from './billing/billing.module';
+import { PaymentModule } from './payment/payment.module';
+import { Scheduler } from 'rxjs';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronsModule } from './crons/crons.module';
 
 @Global()
 @Module({
-  imports: [PrismaModule, AuthModule, TicketModule, SurveyModule, QuestionModule, ResponseModule],
+  imports: [PrismaModule,
+    AuthModule,
+    TicketModule,
+    SurveyModule,
+    QuestionModule,
+    ResponseModule,
+    BillingModule,
+    PaymentModule,
+    ScheduleModule.forRoot(),
+    CronsModule],
   controllers: [AppController],
   providers: [AppService,
     {
