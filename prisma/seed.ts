@@ -13,6 +13,7 @@ async function main() {
       firstName: 'Alice',
       lastName: 'Johnson',
       isActive: true,
+      role: 'user',
     },
     {
       email: 'bob@example.com',
@@ -21,6 +22,7 @@ async function main() {
       firstName: 'Bob',
       lastName: 'Smith',
       isActive: true,
+      role: 'user',
     },
     {
       email: 'charlie@example.com',
@@ -29,6 +31,7 @@ async function main() {
       firstName: 'Charlie',
       lastName: 'Brown',
       isActive: false,
+      role: 'user',
     },
   ];
 

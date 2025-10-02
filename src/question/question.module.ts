@@ -1,20 +1,18 @@
 import { Module } from '@nestjs/common';
-import { TicketService } from './ticket.service';
-import { TicketController } from './ticket.controller';
+import { QuestionService } from './question.service';
+import { QuestionController } from './question.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Module({
-  controllers: [TicketController],
-  providers: [TicketService,
+  imports: [PrismaModule],
+  controllers: [QuestionController],
+  providers: [QuestionService,
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
   ],
-  imports: [
-    PrismaModule,
-  ]
 })
-export class TicketModule { }
+export class QuestionModule { }
