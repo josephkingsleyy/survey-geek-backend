@@ -10,8 +10,6 @@ export class ResponseService {
   async create(dto: CreateResponseDto, userId: number) {
     return this.prisma.response.create({
       data: {
-        userId: userId,
-        questionId: dto.questionId,
         answerText: dto.answerText,
         answerOption: dto.answerOption,
         answerOptions: dto.answerOptions,
