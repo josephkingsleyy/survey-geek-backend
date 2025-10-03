@@ -29,7 +29,8 @@ import { SurveyInterestModule } from './survey-interest/survey-interest.module';
     CronsModule,
     ScheduleModule.forRoot(),
     NotificationModule,
-    SurveyInterestModule],
+    SurveyInterestModule,
+    ],
   controllers: [AppController],
   providers: [AppService,
     {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateResponseDto } from './dto/create-response.dto';
 import { UpdateResponseDto } from './dto/update-response.dto';
@@ -24,10 +24,56 @@ export class ResponseService {
     });
   }
 
-  async findAll() {
-    return this.prisma.response.findMany({
-      include: { user: true, question: true },
-    });
+  async findAll(page = 1, limit = 10) {
+    try {
+      const skip = (page - 1) * limit;
+
+      const [responses, total] = await Promise.all([
+        this.prisma.response.findMany({
+          skip,
+          take: limit,
+          include: { user: true, question: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.response.count(),
+      ]);
+
+      return {
+        data: responses,
+        total,
+        page,
+        lastPage: Math.ceil(total / limit)
+      };
+
+    } catch (error) {
+      throw new Error(`Failed to retrieve responses: ${error.message}`);
+    }
+  }
+  async findAllMyResponses(userId: number, page = 1, limit = 10) {
+    try {
+      const skip = (page - 1) * limit;
+
+      const [responses, total] = await Promise.all([
+        this.prisma.response.findMany({
+          where: { userId },
+          skip,
+          take: limit,
+          include: { user: true, question: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.response.count(),
+      ]);
+
+      return {
+        data: responses,
+        total,
+        page,
+        lastPage: Math.ceil(total / limit)
+      };
+
+    } catch (error) {
+      throw new Error(`Failed to retrieve responses: ${error.message}`);
+    }
   }
 
   async findByQuestion(questionId: number) {
@@ -66,7 +112,11 @@ export class ResponseService {
     });
   }
 
-  async remove(id: number) {
-    return this.prisma.response.delete({ where: { id } });
+async remove(id: number) {
+  try {
+    return await this.prisma.response.delete({ where: { id } });
+  } catch (error) {
+    throw new InternalServerErrorException(`Failed to delete response: ${error.message}`);
   }
+}
 }

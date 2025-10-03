@@ -195,8 +195,6 @@ export class SurveyService {
     });
   }
 
-
-
   // 🔹 Delete survey
   async remove(id: number) {
     const survey = await this.prisma.survey.findUnique({ where: { id } });

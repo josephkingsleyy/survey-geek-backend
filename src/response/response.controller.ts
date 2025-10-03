@@ -8,11 +8,14 @@ import {
   Delete,
   ParseIntPipe,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { ResponseService } from './response.service';
 import { CreateResponseDto } from './dto/create-response.dto';
 import { UpdateResponseDto } from './dto/update-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { PaginationDto } from 'src/ticket/dto/update-ticket.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Controller('responses')
 export class ResponseController {
@@ -27,10 +30,18 @@ export class ResponseController {
     return this.responseService.create(createResponseDto, userId);
   }
 
-  // Get all responses
+  @Roles('admin')
   @Get()
-  async findAll() {
-    return this.responseService.findAll();
+  async findAll(@Query() pagination: PaginationDto) {
+    return this.responseService.findAll(pagination.page, pagination.limit);
+  }
+
+
+  @Get('my-responses')
+  async findAllMyResponses(@Query() pagination: PaginationDto,
+    @CurrentUser('sub') sub: number) {
+    return this.responseService.findAllMyResponses(sub, pagination.page,
+      pagination.limit);
   }
 
   // Get all responses for a specific question
@@ -45,7 +56,6 @@ export class ResponseController {
     return this.responseService.findBySurvey(surveyId);
   }
 
-  // Get a single response
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const response = await this.responseService.findOne(id);
@@ -70,4 +80,5 @@ export class ResponseController {
     if (!deleted) throw new NotFoundException(`Response with ID ${id} not found`);
     return deleted;
   }
+
 }
