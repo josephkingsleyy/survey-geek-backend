@@ -69,6 +69,7 @@ export class PaymentService {
   }
 
   async verifyPayment(reference: string) {
+    
     const url = `https://api.paystack.co/transaction/verify/${reference}`;
 
     try {

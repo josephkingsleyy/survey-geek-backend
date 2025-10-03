@@ -4,6 +4,7 @@ import { PaginationDto } from 'src/ticket/dto/update-ticket.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Controller('payment')
 export class PaymentController {
@@ -11,11 +12,12 @@ export class PaymentController {
 
   @Post()
   create(@Body() createPaymentDto: CreatePaymentDto,
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') sub: number,
   ) {
-    return this.paymentService.create(createPaymentDto, userId);
+    return this.paymentService.create(createPaymentDto, sub);
   }
 
+  @Roles('admin')
   @Get()
   findAll(
     @Query() pagination: PaginationDto
@@ -26,10 +28,10 @@ export class PaymentController {
 
   @Get('my-payments')
   async findMyPayments(
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') sub: number,
     @Query() pagination: PaginationDto,
   ) {
-    return this.paymentService.findMyPayments(userId,
+    return this.paymentService.findMyPayments(sub,
       pagination.page,
       pagination.limit
     );
@@ -58,7 +60,7 @@ export class PaymentController {
     return this.paymentService.create(dto, userId);
   }
 
-  @Get('callback')
+  @Get('callback/check')
   async paymentCallback(@Query('reference') reference: string) {
     return this.paymentService.verifyPayment(reference);
   }
