@@ -10,7 +10,7 @@ export class QuestionService {
 
   // Create a question and link it to a survey
   async create(createQuestionDto: CreateQuestionDto) {
-    const { surveyId, ...rest } = createQuestionDto;
+    const { surveyId, userId, ...rest } = createQuestionDto;
 
     // Ensure the survey exists
     const survey = await this.prisma.survey.findUnique({
@@ -22,8 +22,33 @@ export class QuestionService {
       data: {
         ...rest,
         survey: { connect: { id: surveyId } },
+        user: { connect: { id: userId } },
       },
     });
+  }
+
+  async createMany(questions: CreateQuestionDto[]) {
+    if (!questions.length) return [];
+
+    try {
+      const surveyId = questions[0].surveyId;
+
+      // ✅ Ensure the survey exists
+      const survey = await this.prisma.survey.findUnique({
+        where: { id: surveyId },
+      });
+      if (!survey) throw new NotFoundException(`Survey with ID ${surveyId} not found`);
+
+      return this.prisma.question.createMany({
+        data: questions.map(({ surveyId, ...rest }) => ({
+          ...rest,
+          surveyId,
+        })),
+      });
+    } catch (error) {
+      throw new Error('Error creating questions: ' + error.message);
+    }
+
   }
 
   // Get all questions
@@ -38,6 +63,33 @@ export class QuestionService {
           orderBy: { createdAt: 'desc' },
         }),
         this.prisma.question.count()
+      ]);
+      return {
+        data: questions,
+        meta: {
+          total,
+          page,
+          lastPage: Math.ceil(total / limit),
+        },
+      };
+
+    } catch (error) {
+      throw new Error(error.message);
+
+    }
+  }
+  async findAllMyQuestions(userId: number, page = 1, limit = 10) {
+    try {
+      const skip = (page - 1) * limit;
+      const [questions, total] = await Promise.all([
+        this.prisma.question.findMany({
+          where: { userId },
+          skip,
+          take: limit,
+          include: { survey: true, responses: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.question.count({ where: { userId } })
       ]);
       return {
         data: questions,

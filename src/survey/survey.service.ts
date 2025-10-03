@@ -78,7 +78,6 @@ export class SurveyService {
 
       return survey;
     } catch (error) {
-      console.log(error);
       throw new Error(`Failed to create survey: ${error.message}`);
     }
 
@@ -122,6 +121,7 @@ export class SurveyService {
         include: {
           questions: true,
           responses: true,
+          surveyInterests: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -153,19 +153,49 @@ export class SurveyService {
     return survey;
   }
 
-  // 🔹 Update survey
   async update(id: number, updateSurveyDto: UpdateSurveyDto) {
-    const survey = await this.prisma.survey.findUnique({ where: { id } });
+    const { surveyInterestIds, ...data } = updateSurveyDto;
 
-    if (!survey) {
-      throw new NotFoundException(`Survey with ID ${id} not found`);
+    if (surveyInterestIds) {
+      const existing = await this.prisma.survey.findUnique({
+        where: { id },
+        include: { surveyInterests: { select: { id: true } } },
+      });
+
+      const existingIds = existing.surveyInterests.map((si) => si.id);
+
+      const toConnect = surveyInterestIds
+        .filter((id) => !existingIds.includes(id))
+        .map((id) => ({ id }));
+
+      const toDisconnect = existingIds
+        .filter((id) => !surveyInterestIds.includes(id))
+        .map((id) => ({ id }));
+
+      return this.prisma.survey.update({
+        where: { id },
+        data: {
+          ...data,
+          surveyInterests: {
+            connect: toConnect,
+            disconnect: toDisconnect,
+          },
+        },
+        include: { surveyInterests: true },
+      });
     }
 
     return this.prisma.survey.update({
       where: { id },
-      data: updateSurveyDto,
+      data,
+      include: {
+        surveyInterests: true,
+        questions: true,
+      },
     });
   }
+
+
 
   // 🔹 Delete survey
   async remove(id: number) {

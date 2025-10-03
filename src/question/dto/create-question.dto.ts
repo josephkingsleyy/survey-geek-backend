@@ -8,10 +8,7 @@ export class CreateQuestionDto {
   @IsEnum(QuestionType)
   type: QuestionType;
 
-  // @IsOptional()
-  // @IsArray()
-  // options?: string[]; // only required for choice-based questions
-
+  @IsInt()
   surveyId: number;
 
   @IsOptional()
@@ -26,6 +23,9 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsInt()
   scaleMax?: number;
+
+  @IsInt()
+  userId?: number;
 
   @IsOptional()
   @IsBoolean()
