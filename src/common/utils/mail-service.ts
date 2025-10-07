@@ -12,7 +12,7 @@ export const sendEmail = async ({
   html?: string;
 }) => {
   const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST || 'smtp.hostinger.com', // Hostinger SMTP server
+    host: process.env.MAIL_HOST || 'smtp.titan.email', // Hostinger SMTP server
     port: Number(process.env.MAIL_PORT) || 587,          // 465 (SSL) or 587 (TLS)
     secure: false,                                        // true for 465, false for 587
     auth: {
