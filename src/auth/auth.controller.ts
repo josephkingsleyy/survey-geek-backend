@@ -76,7 +76,6 @@ export class AuthController {
       resetPasswordDto.newPassword);
   }
 
-  @Public()
   @Post('change-password')
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
