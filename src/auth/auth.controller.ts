@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Res } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from 'src/common/guards/google.guard';
 import { ChangePasswordDto, CreateAuthDto, ForgotPasswordDto, LoginAuthDto, ResetPasswordDto, VerifyEmailDto } from './dto/create-auth.dto';
@@ -13,8 +14,13 @@ export class AuthController {
 
   @Public()
   @Post('signup')
-  async signup(@Body() signupDto: CreateAuthDto) {
-    return this.authService.signup(signupDto);
+  async signup(@Body() signupDto: CreateAuthDto,
+    @Req() req: Request) {
+    const userAgent = req.headers['user-agent'];
+    const ip =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.socket.remoteAddress;
+    return this.authService.signup(signupDto, { ip, userAgent });
   }
 
   @Public()
@@ -25,8 +31,13 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  async login(@Body() loginDto: LoginAuthDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginAuthDto,
+    @Req() req: Request) {
+    const userAgent = req.headers['user-agent'];
+    const ip =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.socket.remoteAddress;
+    return this.authService.login(loginDto, { ip, userAgent });
   }
 
   @Get('profile')

@@ -20,7 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) { }
 
-  async signup(dto: CreateAuthDto) {
+  async signup(dto: CreateAuthDto, data: { ip: string, userAgent: string }) {
     try {
       const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
       if (existing) throw new BadRequestException('Email already registered');
@@ -36,6 +36,8 @@ export class AuthService {
           otp,
           otpExpiresAt,
           role: dto.role,
+          browserAgent: data.userAgent,
+          ipAddress: data.ip,
         },
       });
 
@@ -73,7 +75,7 @@ export class AuthService {
     }
   }
 
-  async login(dto: LoginAuthDto) {
+  async login(dto: LoginAuthDto, data: { ip: string, userAgent: string }) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { email: dto.email, softDelete: false },
@@ -83,6 +85,28 @@ export class AuthService {
 
       const valid = await bcrypt.compare(dto.password, user.password);
       if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+      // --- compare IP and browser agent ---
+      const isNewDevice =
+        user.ipAddress !== data.ip || user.browserAgent !== data.userAgent;
+
+      if (isNewDevice) {
+        // 1️⃣ Send alert email (optional)
+        await sendEmail({
+          to: user.email,
+          subject: 'New Login Detected',
+          text: `We noticed a login from a new device or browser.
+                  Details:
+                  - IP Address: ${data.ip}
+                  - Browser: ${data.userAgent}
+                  If this was you, no action is needed. Otherwise, please reset your password immediately.`,
+        });
+        // 2️⃣ Update the stored info
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { ipAddress: data.ip, browserAgent: data.userAgent },
+        });
+      }
 
       const token = await this.signToken(user.id, user.email, user.role);
       return { data: user, accessToken: token };
