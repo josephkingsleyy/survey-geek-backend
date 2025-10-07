@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from 'src/common/guards/google.guard';
-import { CreateAuthDto, LoginAuthDto, VerifyEmailDto } from './dto/create-auth.dto';
+import { ChangePasswordDto, CreateAuthDto, ForgotPasswordDto, LoginAuthDto, ResetPasswordDto, VerifyEmailDto } from './dto/create-auth.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -59,6 +59,33 @@ export class AuthController {
   @Delete('hard/:id')
   async hardDeleteAccount(@Param('id') id: string) {
     return this.authService.hardDeleteAccount(id);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.initiateForgotPassword(forgotPasswordDto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(
+      resetPasswordDto.email,
+      resetPasswordDto.otp,
+      resetPasswordDto.newPassword);
+  }
+
+  @Public()
+  @Post('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser('sub') sub: number) {
+    return this.authService.changePassword(
+      sub,
+      changePasswordDto.oldPassword,
+      changePasswordDto.newPassword,
+    );
   }
 
   @Public()

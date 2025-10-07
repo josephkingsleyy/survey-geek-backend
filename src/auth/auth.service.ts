@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -188,4 +189,77 @@ export class AuthService {
       throw new InternalServerErrorException(err.message);
     }
   }
+
+  async initiateForgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save OTP and expiry (e.g., 10 min)
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetOtp: otp,
+        resetOtpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+
+    // Send OTP via email (your mailer service)
+    await sendEmail({
+      to: user.email,
+      subject: 'Password Reset OTP',
+      text: `Your OTP is ${otp}. It expires in 10 minutes.`,
+    });
+
+    return { message: 'OTP sent to email' };
+  }
+
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (
+      !user.resetOtp ||
+      user.resetOtp !== otp ||
+      !user.resetOtpExpiresAt ||
+      new Date() > user.resetOtpExpiresAt
+    ) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashed,
+        resetOtp: null,
+        resetOtpExpiresAt: null,
+      },
+    });
+
+    return { message: 'Password reset successful' };
+  }
+
+
+  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const valid = await bcrypt.compare(oldPassword, user.password);
+    if (!valid) throw new UnauthorizedException('Old password is incorrect');
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed },
+    });
+
+    return { message: 'Password changed successfully' };
+  }
+
+
+
 }

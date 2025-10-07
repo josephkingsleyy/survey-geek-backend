@@ -149,6 +149,9 @@ model User {
   responses    Response[] // responses submitted by the user
   Notification Notification[]
   questions    Question[]
+
+  resetOtp          String? // temporary OTP
+  resetOtpExpiresAt DateTime? // OTP expiry
 }
 
 model Survey {
