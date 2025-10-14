@@ -1,7 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -18,7 +17,8 @@ import { SurveyInterestModule } from './survey-interest/survey-interest.module';
 
 @Global()
 @Module({
-  imports: [PrismaModule,
+  imports: [
+    PrismaModule,
     AuthModule,
     TicketModule,
     SurveyModule,
@@ -32,11 +32,12 @@ import { SurveyInterestModule } from './survey-interest/survey-interest.module';
     SurveyInterestModule,
     ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
-    }
+    },
   ],
 })
 export class AppModule { }
