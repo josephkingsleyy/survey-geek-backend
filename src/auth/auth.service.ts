@@ -90,23 +90,22 @@ export class AuthService {
       const isNewDevice =
         user.ipAddress !== data.ip || user.browserAgent !== data.userAgent;
 
-      if (isNewDevice) {
-        // 1️⃣ Send alert email (optional)
-        await sendEmail({
-          to: user.email,
-          subject: 'New Login Detected',
-          text: `We noticed a login from a new device or browser.
-                  Details:
-                  - IP Address: ${data.ip}
-                  - Browser: ${data.userAgent}
-                  If this was you, no action is needed. Otherwise, please reset your password immediately.`,
-        });
-        // 2️⃣ Update the stored info
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { ipAddress: data.ip, browserAgent: data.userAgent },
-        });
-      }
+      // if (isNewDevice) {
+      //   await sendEmail({
+      //     to: user.email,
+      //     subject: 'New Login Detected',
+      //     text: `We noticed a login from a new device or browser.
+      //             Details:
+      //             - IP Address: ${data.ip}
+      //             - Browser: ${data.userAgent}
+      //             If this was you, no action is needed. Otherwise, please reset your password immediately.`,
+      //   });
+      //   // 2️⃣ Update the stored info
+      //   await this.prisma.user.update({
+      //     where: { id: user.id },
+      //     data: { ipAddress: data.ip, browserAgent: data.userAgent },
+      //   });
+      // }
 
       const token = await this.signToken(user.id, user.email, user.role);
       return { data: user, accessToken: token };
