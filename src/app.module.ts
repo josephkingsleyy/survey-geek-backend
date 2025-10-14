@@ -14,6 +14,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CronsModule } from './crons/crons.module';
 import { NotificationModule } from './notification/notification.module';
 import { SurveyInterestModule } from './survey-interest/survey-interest.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Global()
 @Module({
