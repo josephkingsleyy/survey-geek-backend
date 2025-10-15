@@ -30,6 +30,7 @@ model Payment {
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime
+  updatedAt   DateTime
   userId      Int
   User        User      @relation(fields: [userId], references: [id])
 }
@@ -107,8 +108,8 @@ model User {
   alternatePhoneNumber      String?
   country                   String?
   state                     String?
-  employmentStatus          String?
-  mostPreferredCommsChannel String?
+  employmentStatus          String? //enum
+  mostPreferredCommsChannel String? //enum
   howYouGotToKnowUs         String?
   profilePhoto              String?
   dob                       DateTime?
@@ -258,6 +259,7 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id])
   title     String
   message   String
+  type      String // e.g., "payment", "survey", "system"
   type      String // e.g., "payment", "survey", "system"
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
