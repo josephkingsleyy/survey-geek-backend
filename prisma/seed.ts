@@ -4,7 +4,7 @@ import { hash } from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // 1) Create 5 users
+  // 1️⃣ USERS
   const usersData = [
     { email: 'alice@example.com', username: 'alice', password: 'password123', firstName: 'Alice', lastName: 'Johnson', isActive: true, role: 'user' },
     { email: 'bob@example.com', username: 'bob', password: 'password123', firstName: 'Bob', lastName: 'Smith', isActive: true, role: 'user' },
@@ -13,31 +13,27 @@ async function main() {
     { email: 'erin@example.com', username: 'erin', password: 'password123', firstName: 'Erin', lastName: 'Wilson', isActive: true, role: 'admin' },
   ];
 
-  const createdUsers = [] as any[];
+  const createdUsers = [];
+
   for (const u of usersData) {
     const hashedPassword = await hash(u.password, 10);
     const user = await prisma.user.upsert({
       where: { email: u.email },
       update: {},
       create: {
-        email: u.email,
-        username: u.username,
+        ...u,
         password: hashedPassword,
-        firstName: u.firstName,
-        lastName: u.lastName,
-        isActive: u.isActive,
-        role: u.role,
         createdAt: new Date(),
       },
     });
     createdUsers.push(user);
   }
-
   console.log(`✅ Created ${createdUsers.length} users`);
 
-  // 2) Create 5 survey interests
+  // 2️⃣ SURVEY INTERESTS
   const interests = ['Technology', 'Health', 'Finance', 'Education', 'Sports'];
-  const createdInterests = [] as any[];
+  const createdInterests = [];
+
   for (const name of interests) {
     const si = await prisma.surveyInterest.upsert({
       where: { name },
@@ -48,18 +44,19 @@ async function main() {
   }
   console.log(`✅ Created ${createdInterests.length} survey interests`);
 
-  // 3) Create 5 payments (one per first 5 users)
-  const payments = [] as any[];
+  // 3️⃣ PAYMENTS
+  const payments = [];
   for (let i = 0; i < 5; i++) {
+    const ref = `PAY-${Date.now()}-${i}`;
     const p = await prisma.payment.upsert({
-      where: { reference: `PAY-${Date.now()}-${i}` },
+      where: { reference: ref },
       update: {},
       create: {
         amount: 100 + i * 10,
         currency: 'NGN',
         status: 'paid',
         method: 'card',
-        reference: `PAY-${Date.now()}-${i}`,
+        reference: ref,
         description: `Seed payment ${i}`,
         paidAt: new Date(),
         createdAt: new Date(),
@@ -71,13 +68,11 @@ async function main() {
   }
   console.log(`✅ Created ${payments.length} payments`);
 
-  // 4) Create 5 billings - attach to users 0..4
-  const billings = [] as any[];
+  // 4️⃣ BILLINGS
+  const billings = [];
   for (let i = 0; i < 5; i++) {
-    const b = await prisma.billing.upsert({
-      where: { id: i + 1 },
-      update: {},
-      create: {
+    const b = await prisma.billing.create({
+      data: {
         planName: `Plan ${i + 1}`,
         amount: 9.99 + i,
         currency: 'NGN',
@@ -89,23 +84,21 @@ async function main() {
   }
   console.log(`✅ Created ${billings.length} billings`);
 
-  // 5) Create 5 surveys each by a user and connect to some interests
-  const surveys = [] as any[];
+  // 5️⃣ SURVEYS
+  const surveys = [];
   for (let i = 0; i < 5; i++) {
     const s = await prisma.survey.create({
       data: {
         title: `Seed Survey ${i + 1}`,
         description: `This is a seeded survey #${i + 1}`,
-        status: i % 2 === 0 ? 'published' : 'draft',
+        status: i % 2 === 0 ? 'OPEN' : 'DRAFT',
         requireResponse: true,
         minResponse: 1,
         startDate: new Date(),
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
         userId: createdUsers[i].id,
         surveyInterests: {
-          connect: [
-            { id: createdInterests[i % createdInterests.length].id },
-          ],
+          connect: [{ id: createdInterests[i % createdInterests.length].id }],
         },
       },
     });
@@ -113,8 +106,8 @@ async function main() {
   }
   console.log(`✅ Created ${surveys.length} surveys`);
 
-  // 6) Create 5 questions (one per survey)
-  const questions = [] as any[];
+  // 6️⃣ QUESTIONS
+  const questions = [];
   const sampleOptions = [['Yes', 'No'], ['A', 'B', 'C'], ['1', '2', '3'], ['Red', 'Green'], ['Option1', 'Option2']];
   for (let i = 0; i < 5; i++) {
     const q = await prisma.question.create({
@@ -123,37 +116,39 @@ async function main() {
         text: `Question ${i + 1} for survey ${surveys[i].id}`,
         type: i % 2 === 0 ? 'SINGLE_CHOICE' : 'TEXT',
         options: sampleOptions[i],
-        scaleMin: i % 2 === 0 ? 1 : undefined,
-        scaleMax: i % 2 === 0 ? 5 : undefined,
+        scaleMin: i % 2 === 0 ? 1 : null,
+        scaleMax: i % 2 === 0 ? 5 : null,
         allowUpload: false,
         userId: createdUsers[i].id,
+        sectionId: null, // ✅ add if required by your schema
       },
     });
     questions.push(q);
   }
   console.log(`✅ Created ${questions.length} questions`);
 
-  // 7) Create 5 responses linking users, surveys and questions
-  const responses = [] as any[];
+  // 7️⃣ RESPONSES
+  const responses = [];
   for (let i = 0; i < 5; i++) {
     const r = await prisma.response.create({
       data: {
         userId: createdUsers[(i + 1) % createdUsers.length].id,
         surveyId: surveys[i].id,
         questionId: questions[i].id,
-        answerText: i % 2 === 0 ? `Answer text ${i}` : undefined,
-        answerOption: i % 2 === 0 ? sampleOptions[i][0] : undefined,
-        answerOptions: i % 2 !== 0 ? sampleOptions[i] : undefined,
-        rating: i % 2 === 0 ? 4 : undefined,
-        uploadUrl: undefined,
+        answerText: i % 2 === 0 ? `Answer text ${i}` : null,
+        answerOption: i % 2 === 0 ? sampleOptions[i][0] : null,
+        answerOptions: i % 2 !== 0 ? sampleOptions[i] : null,
+        rating: i % 2 === 0 ? 4 : null,
+        uploadUrl: null,
+        updatedAt: new Date(),
       },
     });
     responses.push(r);
   }
   console.log(`✅ Created ${responses.length} responses`);
 
-  // 8) Create 5 tickets with nested attachments
-  const tickets = [] as any[];
+  // 8️⃣ TICKETS (with attachments)
+  const tickets = [];
   for (let i = 0; i < 5; i++) {
     const ticket = await prisma.ticket.create({
       data: {
@@ -166,7 +161,10 @@ async function main() {
         assignedToId: createdUsers[(i + 1) % createdUsers.length].id,
         attachments: {
           create: [
-            { url: `https://example.com/file-${i + 1}.png`, filename: `file-${i + 1}.png` },
+            {
+              url: `https://example.com/file-${i + 1}.png`,
+              filename: `file-${i + 1}.png`,
+            },
           ],
         },
       },
@@ -176,8 +174,8 @@ async function main() {
   }
   console.log(`✅ Created ${tickets.length} tickets (with attachments)`);
 
-  // 9) Create 5 standalone files (not linked to tickets)
-  const files = [] as any[];
+  // 9️⃣ FILES
+  const files = [];
   for (let i = 0; i < 5; i++) {
     const f = await prisma.file.create({
       data: {
@@ -189,8 +187,8 @@ async function main() {
   }
   console.log(`✅ Created ${files.length} standalone files`);
 
-  // 10) Create 5 notifications for different users
-  const notifications = [] as any[];
+  // 🔟 NOTIFICATIONS
+  const notifications = [];
   for (let i = 0; i < 5; i++) {
     const n = await prisma.notification.create({
       data: {
@@ -209,7 +207,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {

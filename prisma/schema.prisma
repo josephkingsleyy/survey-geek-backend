@@ -154,6 +154,13 @@ model User {
   resetOtpExpiresAt DateTime? // OTP expiry
 }
 
+enum SurveyStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
 model Survey {
   id     Int  @id @default(autoincrement())
   userId Int
@@ -161,28 +168,44 @@ model Survey {
 
   title           String?
   description     String?
-  status          String?   @default("draft")
-  requireResponse Boolean?  @default(false)
+  status          SurveyStatus @default(DRAFT)
+  requireResponse Boolean?     @default(false)
   minResponse     Int?
   startDate       DateTime?
   endDate         DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  questions Question[]
+  sections  Section[]  @relation("SurveySections")
   responses Response[]
 
   surveyInterests SurveyInterest[] @relation("SurveyInterests")
 }
 
-model Question {
+model Section {
   id       Int    @id @default(autoincrement())
   surveyId Int
-  survey   Survey @relation(fields: [surveyId], references: [id])
+  survey   Survey @relation("SurveySections", fields: [surveyId], references: [id])
+
+  title       String
+  description String?
+  order       Int? // optional ordering within a survey
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions Question[] @relation("SectionQuestions")
+}
+
+model Question {
+  id          Int     @id @default(autoincrement())
+  sectionId   Int
+  section     Section @relation("SectionQuestions", fields: [sectionId], references: [id])
+  description String?
 
   text        String
   type        QuestionType // TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, etc.
   options     String[] // for choice-based questions
+  required    Boolean      @default(false)
   scaleMin    Int? // for NPS, Likert, Rating
   scaleMax    Int? // e.g. 1–5 or 1–10
   allowUpload Boolean? // for Upload questions
@@ -213,6 +236,7 @@ model Response {
   matrixRow     String? // for Matrix questions
   matrixCol     String? // for Matrix questions
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 enum QuestionType {

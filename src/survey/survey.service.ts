@@ -38,6 +38,7 @@ export class SurveyService {
                 options: q.options ?? [],
                 scaleMin: q.scaleMin,
                 scaleMax: q.scaleMax,
+                userId: userId
               })),
             }
             : undefined,
