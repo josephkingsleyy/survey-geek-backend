@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateQuestionDto } from 'src/question/dto/create-question.dto';
-import { QuestionType } from '@prisma/client';
+import { QuestionType, SurveyStatus } from '@prisma/client';
 
 
 export class CreateQuestionAlongDto {
@@ -56,7 +56,7 @@ export class CreateSurveyDto {
 
   @IsOptional()
   @IsString()
-  status?: string; // default handled in Prisma
+  status?: SurveyStatus; // default handled in Prisma
 
   @IsOptional()
   @IsBoolean()

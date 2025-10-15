@@ -30,7 +30,6 @@ model Payment {
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime
-  updatedAt   DateTime
   userId      Int
   User        User      @relation(fields: [userId], references: [id])
 }
@@ -259,7 +258,6 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id])
   title     String
   message   String
-  type      String // e.g., "payment", "survey", "system"
   type      String // e.g., "payment", "survey", "system"
   read      Boolean  @default(false)
   createdAt DateTime @default(now())

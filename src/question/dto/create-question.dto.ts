@@ -9,7 +9,7 @@ export class CreateQuestionDto {
   type: QuestionType;
 
   @IsInt()
-  surveyId: number;
+  sectionId: number;
 
   @IsOptional()
   @IsArray()

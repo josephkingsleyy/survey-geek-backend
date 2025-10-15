@@ -85,10 +85,24 @@ export class ResponseService {
 
   async findBySurvey(surveyId: number) {
     return this.prisma.response.findMany({
-      where: { question: { surveyId } },
-      include: { user: true, question: true },
+      where: {
+        question: {
+          section: {
+            surveyId: surveyId,
+          },
+        },
+      },
+      include: {
+        user: true,
+        question: {
+          include: {
+            section: true,
+          },
+        },
+      },
     });
   }
+
 
   async findOne(id: number) {
     const response = await this.prisma.response.findUnique({
@@ -112,11 +126,11 @@ export class ResponseService {
     });
   }
 
-async remove(id: number) {
-  try {
-    return await this.prisma.response.delete({ where: { id } });
-  } catch (error) {
-    throw new InternalServerErrorException(`Failed to delete response: ${error.message}`);
+  async remove(id: number) {
+    try {
+      return await this.prisma.response.delete({ where: { id } });
+    } catch (error) {
+      throw new InternalServerErrorException(`Failed to delete response: ${error.message}`);
+    }
   }
-}
 }

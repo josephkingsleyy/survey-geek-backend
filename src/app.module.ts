@@ -15,6 +15,7 @@ import { CronsModule } from './crons/crons.module';
 import { NotificationModule } from './notification/notification.module';
 import { SurveyInterestModule } from './survey-interest/survey-interest.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SectionModule } from './section/section.module';
 
 @Global()
 @Module({
@@ -31,6 +32,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ScheduleModule.forRoot(),
     NotificationModule,
     SurveyInterestModule,
+    SectionModule,
     ],
   controllers: [AppController],
   providers: [

@@ -10,18 +10,18 @@ export class QuestionService {
 
   // Create a question and link it to a survey
   async create(createQuestionDto: CreateQuestionDto) {
-    const { surveyId, userId, ...rest } = createQuestionDto;
+    const { sectionId, userId, ...rest } = createQuestionDto;
 
     // Ensure the survey exists
-    const survey = await this.prisma.survey.findUnique({
-      where: { id: surveyId },
+    const section = await this.prisma.survey.findUnique({
+      where: { id: sectionId },
     });
-    if (!survey) throw new NotFoundException(`Survey with ID ${surveyId} not found`);
+    if (!section) throw new NotFoundException(`Survey with ID ${sectionId} not found`);
 
     return this.prisma.question.create({
       data: {
         ...rest,
-        survey: { connect: { id: surveyId } },
+        section: { connect: { id: sectionId } }, // ✅ correct
         user: { connect: { id: userId } },
       },
     });
@@ -31,18 +31,18 @@ export class QuestionService {
     if (!questions.length) return [];
 
     try {
-      const surveyId = questions[0].surveyId;
+      const sectionId = questions[0].sectionId;
 
       // ✅ Ensure the survey exists
       const survey = await this.prisma.survey.findUnique({
-        where: { id: surveyId },
+        where: { id: sectionId },
       });
-      if (!survey) throw new NotFoundException(`Survey with ID ${surveyId} not found`);
+      if (!survey) throw new NotFoundException(`Survey with ID ${sectionId} not found`);
 
       return this.prisma.question.createMany({
-        data: questions.map(({ surveyId, ...rest }) => ({
+        data: questions.map(({ sectionId, ...rest }) => ({
           ...rest,
-          surveyId,
+          sectionId,
         })),
       });
     } catch (error) {
@@ -59,7 +59,11 @@ export class QuestionService {
         this.prisma.question.findMany({
           skip,
           take: limit,
-          include: { survey: true, responses: true },
+          include: {
+            section: {
+              include: { survey: true }, // ✅ nested include
+            }, responses: true
+          },
           orderBy: { createdAt: 'desc' },
         }),
         this.prisma.question.count()
@@ -78,6 +82,7 @@ export class QuestionService {
 
     }
   }
+
   async findAllMyQuestions(userId: number, page = 1, limit = 10) {
     try {
       const skip = (page - 1) * limit;
@@ -86,7 +91,12 @@ export class QuestionService {
           where: { userId },
           skip,
           take: limit,
-          include: { survey: true, responses: true },
+          include: {
+            section: {
+              include: { survey: true }, // ✅ nested include
+            },
+            responses: true
+          },
           orderBy: { createdAt: 'desc' },
         }),
         this.prisma.question.count({ where: { userId } })
@@ -109,19 +119,41 @@ export class QuestionService {
   // Get all questions belonging to a survey
   async findBySurvey(surveyId: number) {
     return this.prisma.question.findMany({
-      where: { surveyId },
-      include: { responses: true },
+      where: {
+        section: {
+          surveyId, // ✅ filter through section relation
+        },
+      },
+      include: {
+        responses: true,
+        section: {
+          include: {
+            survey: true, // ✅ optional: include survey info
+          },
+        },
+      },
     });
   }
+
 
   // Get a single question
   async findOne(id: number) {
     const question = await this.prisma.question.findUnique({
       where: { id },
-      include: { survey: true, responses: true },
+      include: {
+        responses: true,
+        section: {
+          include: {
+            survey: true, // ✅ access survey through section
+          },
+        },
+      },
     });
 
-    if (!question) throw new NotFoundException(`Question with ID ${id} not found`);
+    if (!question) {
+      throw new NotFoundException(`Question with ID ${id} not found`);
+    }
+
     return question;
   }
 

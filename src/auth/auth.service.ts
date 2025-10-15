@@ -41,11 +41,11 @@ export class AuthService {
         },
       });
 
-      await sendEmail({
-        to: dto.email,
-        subject: 'Verify your email',
-        text: `Your OTP is: ${otp}`,
-      });
+      // await sendEmail({
+      //   to: dto.email,
+      //   subject: 'Verify your email',
+      //   text: `Your OTP is: ${otp}`,
+      // });
 
       return { message: 'User registered. Please verify email with OTP sent to your inbox.' };
     } catch (err) {

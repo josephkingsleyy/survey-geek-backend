@@ -1,8 +1,10 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
 import { NotificationService } from 'src/notification/notification.service';
+import { SurveyStatus } from '@prisma/client';
+
 
 @Injectable()
 export class SurveyService {
@@ -10,55 +12,133 @@ export class SurveyService {
     private readonly notificationService: NotificationService
   ) { }
 
+  // async create(createSurveyDto: CreateSurveyDto, userId: number) {
+  //   try {
+  //     const { questions, surveyInterestIds, ...surveyData } = createSurveyDto;
+
+  //     const user = await this.prisma.user.findUnique({
+  //       where: { id: userId },
+  //     });
+
+  //     if (!user) {
+  //       throw new NotFoundException('User not found');
+  //     }
+
+  //     // if (!user.isActive) {
+  //     //   throw new ForbiddenException('User is not allowed to create surveys');
+  //     // }
+  //     // 1. Create the survey and link to interests
+  //     const survey = await this.prisma.survey.create({
+  //       data: {
+  //         ...surveyData,
+  //         userId,
+  //         questions: {
+  //           create: questions?.map((q) => ({
+  //             text: q.text,
+  //             type: q.type,
+  //             options: q.options ?? [],
+  //             scaleMin: q.scaleMin,
+  //             scaleMax: q.scaleMax,
+  //             userId: userId,
+  //           })) || [],
+  //         },
+  //         surveyInterests: surveyInterestIds?.length
+  //           ? {
+  //             connect: surveyInterestIds.map((id) => ({ id })),
+  //           }
+  //           : undefined,
+  //       },
+  //       include: {
+  //         surveyInterests: true,
+  //         questions: true,
+  //       },
+  //     });
+
+  //     // 2. Get all users who are subscribed to ANY of the interests
+  //     if (surveyInterestIds?.length) {
+  //       const users = await this.prisma.user.findMany({
+  //         where: {
+  //           surveyInterest: {
+  //             some: { id: { in: surveyInterestIds } },
+  //           },
+  //         },
+  //         select: { id: true },
+  //       });
+
+  //       const userIds = users.map((u) => u.id);
+
+  //       // 3. Send them a notification
+  //       if (userIds.length > 0) {
+  //         await this.notificationService.broadcast(userIds, {
+  //           title: 'New Survey Available',
+  //           message: `A new survey "${survey.title}" was just published in your interest area.`,
+  //           type: 'survey',
+  //         });
+  //       }
+  //     }
+
+  //     return survey;
+  //   } catch (error) {
+  //     throw new Error(`Failed to create survey: ${error.message}`);
+  //   }
+
+  // }
+
   async create(createSurveyDto: CreateSurveyDto, userId: number) {
+    const { questions, surveyInterestIds, ...surveyData } = createSurveyDto;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
     try {
-      const { questions, surveyInterestIds, ...surveyData } = createSurveyDto;
-
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      // if (!user.isActive) {
-      //   throw new ForbiddenException('User is not allowed to create surveys');
-      // }
-      // 1. Create the survey and link to interests
+      // 1️⃣ Create the survey
       const survey = await this.prisma.survey.create({
         data: {
           ...surveyData,
           userId,
-          questions: questions?.length
-            ? {
-              create: questions.map((q) => ({
-                text: q.text,
-                type: q.type,
-                options: q.options ?? [],
-                scaleMin: q.scaleMin,
-                scaleMax: q.scaleMax,
-                userId: userId
-              })),
-            }
-            : undefined,
           surveyInterests: surveyInterestIds?.length
-            ? {
-              connect: surveyInterestIds.map((id) => ({ id })),
-            }
+            ? { connect: surveyInterestIds.map((id) => ({ id })) }
             : undefined,
         },
         include: {
           surveyInterests: true,
-          questions: true,
         },
       });
 
-      // 2. Get all users who are subscribed to ANY of the interests
+      // 2️⃣ Create a default section for the survey
+      const section = await this.prisma.section.create({
+        data: {
+          title: `Section 1 for ${survey.title}`,
+          description: 'Default section created with survey',
+          surveyId: survey.id,
+        },
+      });
+
+      // 3️⃣ Create questions under that section (if any)
+      if (questions?.length) {
+        await Promise.all(
+          questions.map((q) =>
+            this.prisma.question.create({
+              data: {
+                text: q.text,
+                type: q.type,
+                options: q.options ?? [],
+                scaleMin: q.scaleMin ?? null,
+                scaleMax: q.scaleMax ?? null,
+                allowUpload: q.allowUpload ?? false,
+                sectionId: section.id,
+                userId: userId,
+              },
+            })
+          )
+        );
+      }
+
+      // 4️⃣ Notify interested users (if applicable)
       if (surveyInterestIds?.length) {
         const users = await this.prisma.user.findMany({
           where: {
-            surveyInterest: {
+            surveyInterest: { // ✅ ensure matches your User model relation name
               some: { id: { in: surveyInterestIds } },
             },
           },
@@ -67,7 +147,6 @@ export class SurveyService {
 
         const userIds = users.map((u) => u.id);
 
-        // 3. Send them a notification
         if (userIds.length > 0) {
           await this.notificationService.broadcast(userIds, {
             title: 'New Survey Available',
@@ -77,12 +156,22 @@ export class SurveyService {
         }
       }
 
-      return survey;
+      // 5️⃣ Return survey with related data
+      return await this.prisma.survey.findUnique({
+        where: { id: survey.id },
+        include: {
+          surveyInterests: true,
+          sections: {
+            include: { questions: true },
+          },
+        },
+      });
     } catch (error) {
-      throw new Error(`Failed to create survey: ${error.message}`);
+      console.error('❌ Failed to create survey:', error);
+      throw new InternalServerErrorException(`Failed to create survey: ${error.message}`);
     }
-
   }
+
 
 
   // 🔹 Admin: get all surveys with pagination
@@ -94,7 +183,11 @@ export class SurveyService {
         skip,
         take: limit,
         include: {
-          questions: true,
+          sections: {
+            include: {
+              questions: true, // ✅ nested inside sections
+            },
+          },
           responses: true,
           user: { select: { id: true, email: true } },
         },
@@ -120,8 +213,13 @@ export class SurveyService {
         skip,
         take: limit,
         include: {
-          questions: true,
+          sections: {
+            include: {
+              questions: true, // ✅ nested inside sections
+            },
+          },
           responses: true,
+          user: { select: { id: true, email: true } },
           surveyInterests: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -142,8 +240,19 @@ export class SurveyService {
     const survey = await this.prisma.survey.findUnique({
       where: { id },
       include: {
-        questions: true,
+        sections: {
+          include: {
+            questions: {
+              include: {
+                responses: true, // Optional: if you want each question’s responses
+              },
+            },
+          },
+        },
         responses: true,
+        user: {
+          select: { id: true, email: true },
+        },
       },
     });
 
@@ -156,6 +265,10 @@ export class SurveyService {
 
   async update(id: number, updateSurveyDto: UpdateSurveyDto) {
     const { surveyInterestIds, ...data } = updateSurveyDto;
+
+    // if (typeof data.status === 'string') {
+    //   data.status = { set: data.status as SurveyStatus };
+    // }
 
     if (surveyInterestIds) {
       const existing = await this.prisma.survey.findUnique({
@@ -182,7 +295,10 @@ export class SurveyService {
             disconnect: toDisconnect,
           },
         },
-        include: { surveyInterests: true },
+        include: {
+          surveyInterests: true,
+          sections: { include: { questions: true } }, // ✅ fixed include
+        },
       });
     }
 
@@ -191,10 +307,11 @@ export class SurveyService {
       data,
       include: {
         surveyInterests: true,
-        questions: true,
+        sections: { include: { questions: true } }, // ✅ fixed include
       },
     });
   }
+
 
   // 🔹 Delete survey
   async remove(id: number) {

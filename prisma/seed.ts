@@ -14,17 +14,12 @@ async function main() {
   ];
 
   const createdUsers = [];
-
   for (const u of usersData) {
     const hashedPassword = await hash(u.password, 10);
     const user = await prisma.user.upsert({
       where: { email: u.email },
       update: {},
-      create: {
-        ...u,
-        password: hashedPassword,
-        createdAt: new Date(),
-      },
+      create: { ...u, password: hashedPassword, createdAt: new Date() },
     });
     createdUsers.push(user);
   }
@@ -33,7 +28,6 @@ async function main() {
   // 2️⃣ SURVEY INTERESTS
   const interests = ['Technology', 'Health', 'Finance', 'Education', 'Sports'];
   const createdInterests = [];
-
   for (const name of interests) {
     const si = await prisma.surveyInterest.upsert({
       where: { name },
@@ -84,10 +78,12 @@ async function main() {
   }
   console.log(`✅ Created ${billings.length} billings`);
 
-  // 5️⃣ SURVEYS
+  // 5️⃣ SURVEYS + SECTIONS + QUESTIONS
   const surveys = [];
+  const sampleOptions = [['Yes', 'No'], ['A', 'B', 'C'], ['1', '2', '3'], ['Red', 'Green'], ['Option1', 'Option2']];
+
   for (let i = 0; i < 5; i++) {
-    const s = await prisma.survey.create({
+    const survey = await prisma.survey.create({
       data: {
         title: `Seed Survey ${i + 1}`,
         description: `This is a seeded survey #${i + 1}`,
@@ -102,44 +98,48 @@ async function main() {
         },
       },
     });
-    surveys.push(s);
-  }
-  console.log(`✅ Created ${surveys.length} surveys`);
+    surveys.push(survey);
 
-  // 6️⃣ QUESTIONS
-  const questions = [];
-  const sampleOptions = [['Yes', 'No'], ['A', 'B', 'C'], ['1', '2', '3'], ['Red', 'Green'], ['Option1', 'Option2']];
-  for (let i = 0; i < 5; i++) {
-    const q = await prisma.question.create({
+    // ➕ Create a section for each survey
+    const section = await prisma.section.create({
       data: {
-        surveyId: surveys[i].id,
-        text: `Question ${i + 1} for survey ${surveys[i].id}`,
-        type: i % 2 === 0 ? 'SINGLE_CHOICE' : 'TEXT',
-        options: sampleOptions[i],
-        scaleMin: i % 2 === 0 ? 1 : null,
-        scaleMax: i % 2 === 0 ? 5 : null,
-        allowUpload: false,
-        userId: createdUsers[i].id,
-        sectionId: null, // ✅ add if required by your schema
+        title: `Section 1 for Survey ${i + 1}`,
+        description: 'Seeded section for demo',
+        surveyId: survey.id,
       },
     });
-    questions.push(q);
-  }
-  console.log(`✅ Created ${questions.length} questions`);
 
-  // 7️⃣ RESPONSES
+    // ➕ Create a question under that section
+    const question = await prisma.question.create({
+      data: {
+        sectionId: section.id, // ✅ correct relation
+        text: `Question ${i + 1} for survey ${survey.id}`,
+        type: i % 2 === 0 ? 'SINGLE_CHOICE' : 'TEXT',
+        options: sampleOptions[i],
+        scaleMin: i % 2 === 0 ? 1 : undefined,
+        scaleMax: i % 2 === 0 ? 5 : undefined,
+        allowUpload: false,
+        userId: createdUsers[i].id,
+      },
+    });
+
+    console.log(`✅ Created question: ${question.text}`);
+  }
+
+  // 6️⃣ RESPONSES
   const responses = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < surveys.length; i++) {
+    const section = await prisma.section.findFirst({ where: { surveyId: surveys[i].id } });
+    const question = await prisma.question.findFirst({ where: { sectionId: section!.id } });
+
     const r = await prisma.response.create({
       data: {
         userId: createdUsers[(i + 1) % createdUsers.length].id,
         surveyId: surveys[i].id,
-        questionId: questions[i].id,
+        questionId: question!.id,
         answerText: i % 2 === 0 ? `Answer text ${i}` : null,
-        answerOption: i % 2 === 0 ? sampleOptions[i][0] : null,
-        answerOptions: i % 2 !== 0 ? sampleOptions[i] : null,
+        answerOption: i % 2 === 0 ? 'Yes' : null,
         rating: i % 2 === 0 ? 4 : null,
-        uploadUrl: null,
         updatedAt: new Date(),
       },
     });
@@ -147,7 +147,7 @@ async function main() {
   }
   console.log(`✅ Created ${responses.length} responses`);
 
-  // 8️⃣ TICKETS (with attachments)
+  // 7️⃣ TICKETS (with attachments)
   const tickets = [];
   for (let i = 0; i < 5; i++) {
     const ticket = await prisma.ticket.create({
@@ -174,7 +174,7 @@ async function main() {
   }
   console.log(`✅ Created ${tickets.length} tickets (with attachments)`);
 
-  // 9️⃣ FILES
+  // 8️⃣ FILES
   const files = [];
   for (let i = 0; i < 5; i++) {
     const f = await prisma.file.create({
@@ -187,7 +187,7 @@ async function main() {
   }
   console.log(`✅ Created ${files.length} standalone files`);
 
-  // 🔟 NOTIFICATIONS
+  // 9️⃣ NOTIFICATIONS
   const notifications = [];
   for (let i = 0; i < 5; i++) {
     const n = await prisma.notification.create({
