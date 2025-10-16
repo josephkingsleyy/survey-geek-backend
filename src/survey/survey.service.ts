@@ -213,7 +213,8 @@ export class SurveyService {
         skip,
         take: limit,
         include: {
-          sections: {
+          sections:  
+          {
             include: {
               questions: true, // ✅ nested inside sections
             },
