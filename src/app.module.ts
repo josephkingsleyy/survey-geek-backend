@@ -7,6 +7,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { CronsModule } from './crons/crons.module';
+import { NotificationModule } from './notification/notification.module';
 
 
 @Module({
@@ -14,8 +15,8 @@ import { CronsModule } from './crons/crons.module';
     PrismaModule,
     AuthModule,
     CronsModule,
+    NotificationModule,
     ScheduleModule.forRoot(),
-
   ],
   controllers: [AppController],
   providers: [AppService,
