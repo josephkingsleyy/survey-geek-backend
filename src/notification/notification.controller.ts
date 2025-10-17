@@ -2,8 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { PaginationDto } from 'src/ticket/dto/update-ticket.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('notification')
 export class NotificationController {
