@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+//output   = "../generated/prisma"
+
+datasource db {
+  provider = "postgresql" // or "mysql" | "sqlite" | "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Billing {
+  id        Int       @id @default(autoincrement())
+  planName  String
+  amount    Float
+  currency  String
+  expiresAt DateTime?
+  userId    Int?      @unique
+  user      User?     @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id          Int       @id @default(autoincrement())
+  amount      Float
+  currency    String    @default("NGN")
+  status      String    @default("pending")
+  method      String?
+  reference   String    @unique
+  description String?
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  userId      Int
+  User        User      @relation(fields: [userId], references: [id])
+}
+
+model SurveyInterest {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  User    User[]   @relation("UserInterests")
+  surveys Survey[] @relation("SurveyInterests")
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Ticket {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+
+  // Status & Priority
+  status   TicketStatus   @default(OPEN)
+  priority TicketPriority @default(MEDIUM)
+
+  // Categorization
+  category       String?
+  resolutionNote String?
+
+  // Timestamps
+  resolvedAt DateTime?
+  closedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  userId       Int // creator (required)
+  assignedToId Int? // agent/admin handling it
+
+  user        User   @relation("CreatedTickets", fields: [userId], references: [id])
+  assignedTo  User?  @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  attachments File[] // one-to-many
+
+  @@index([userId])
+  @@index([assignedToId])
+}
+
+model File {
+  id        Int      @id @default(autoincrement())
+  url       String
+  filename  String
+  ticketId  Int? // optional foreign key; file may exist before being linked
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([ticketId]) // index for faster queries on ticket
+}
+
+model User {
+  id                        Int              @id @default(autoincrement())
+  email                     String           @unique
+  emailVerifiedAt           DateTime?
+  password                  String?
+  username                  String?
+  phoneNumber               String?
+  alternatePhoneNumber      String?
+  country                   String?
+  state                     String?
+  employmentStatus          String? //enum
+  mostPreferredCommsChannel String? //enum
+  howYouGotToKnowUs         String?
+  profilePhoto              String?
+  dob                       DateTime?
+  gender                    String?
+  location                  String?
+  occupation                String?
+  role                      String?          @default("user")
+  isActive                  Boolean?         @default(false)
+  otp                       String?
+  otpExpiresAt              DateTime?
+  twoFactorAuth             String?
+  lastLogin                 String?
+  ipAddress                 String?
+  browserAgent              String?
+  subscriptionPlan          String?
+  subscriptionPlanExpireAt  String?
+  billingId                 Int?             @unique
+  bio                       String?
+  referralCode              String?
+  softDelete                Boolean?         @default(false)
+  firstName                 String?
+  lastName                  String?
+  countryCode               String?
+  stateCode                 String?
+  subDivisionCode           String?
+  subDivisionName           String?
+  address                   String?
+  hasOnboarded              Boolean?
+  createdAt                 DateTime         @default(now())
+  payment                   Payment[]
+  billing                   Billing?
+  surveyInterest            SurveyInterest[] @relation("UserInterests")
+
+  createdTickets  Ticket[] @relation("CreatedTickets") // tickets created by the user
+  assignedTickets Ticket[] @relation("AssignedTickets") // tickets assigned to the user
+
+  surveys      Survey[] // surveys created by the user
+  responses    Response[] // responses submitted by the user
+  Notification Notification[]
+  questions    Question[]
+
+  resetOtp          String? // temporary OTP
+  resetOtpExpiresAt DateTime? // OTP expiry
+}
+
+enum SurveyStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+model Survey {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  title           String?
+  description     String?
+  status          SurveyStatus @default(DRAFT)
+  requireResponse Boolean?     @default(false)
+  minResponse     Int?
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  sections  Section[]  @relation("SurveySections")
+  responses Response[]
+
+  surveyInterests SurveyInterest[] @relation("SurveyInterests")
+}
+
+model Section {
+  id       Int    @id @default(autoincrement())
+  surveyId Int
+  survey   Survey @relation("SurveySections", fields: [surveyId], references: [id])
+
+  title       String
+  description String?
+  order       Int? // optional ordering within a survey
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions Question[] @relation("SectionQuestions")
+}
+
+model Question {
+  id          Int     @id @default(autoincrement())
+  sectionId   Int
+  section     Section @relation("SectionQuestions", fields: [sectionId], references: [id])
+  description String?
+
+  text        String
+  type        QuestionType // TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, etc.
+  options     String[] // for choice-based questions
+  required    Boolean      @default(false)
+  scaleMin    Int? // for NPS, Likert, Rating
+  scaleMax    Int? // e.g. 1–5 or 1–10
+  allowUpload Boolean? // for Upload questions
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userId      Int?
+  user        User?        @relation(fields: [userId], references: [id])
+
+  responses Response[]
+}
+
+model Response {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  surveyId Int
+  survey   Survey @relation(fields: [surveyId], references: [id])
+
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+
+  answerText    String? // for TEXT answers
+  answerOption  String? // for SINGLE_CHOICE
+  answerOptions String[] // for MULTIPLE_CHOICE
+  rating        Int? // for RATING, Likert, NPS
+  uploadUrl     String? // for uploads
+  matrixRow     String? // for Matrix questions
+  matrixCol     String? // for Matrix questions
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum QuestionType {
+  TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  RATING
+  RANKING
+  LIKERT
+  UPLOAD
+  NET_PROMOTER_SCORE
+  MATRIX
+  DATE_TIME
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String // e.g., "payment", "survey", "system"
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
