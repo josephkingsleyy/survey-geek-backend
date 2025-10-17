@@ -8,6 +8,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { CronsModule } from './crons/crons.module';
 import { NotificationModule } from './notification/notification.module';
+import { PaymentModule } from './payment/payment.module';
 
 
 @Module({
@@ -16,6 +17,7 @@ import { NotificationModule } from './notification/notification.module';
     AuthModule,
     CronsModule,
     NotificationModule,
+    PaymentModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
