@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { BillingModule } from './billing/billing.module';
 import { TicketModule } from './ticket/ticket.module';
 import { CronsModule } from './crons/crons.module';
+import { QuestionModule } from './question/question.module';
 
 
 @Module({
@@ -17,6 +18,7 @@ import { CronsModule } from './crons/crons.module';
     AuthModule,
     BillingModule,
     CronsModule,
+    QuestionModule,
     TicketModule,
     ScheduleModule.forRoot(),
 
