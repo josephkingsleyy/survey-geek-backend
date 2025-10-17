@@ -1,4 +1,15 @@
-import { PrismaClient, User, SurveyInterest, Payment, Billing, Survey, Response, Ticket, File, Notification } from '@prisma/client';
+import {
+  PrismaClient,
+  User,
+  SurveyInterest,
+  Payment,
+  Billing,
+  Survey,
+  Response,
+  Ticket,
+  File,
+  Notification
+} from '@prisma/client';
 
 import { hash } from 'bcryptjs';
 
