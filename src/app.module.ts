@@ -6,22 +6,14 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
-import { BillingModule } from './billing/billing.module';
-import { TicketModule } from './ticket/ticket.module';
 import { CronsModule } from './crons/crons.module';
-import { QuestionModule } from './question/question.module';
-import { ResponseModule } from './response/response.module';
 
 
 @Module({
   imports: [
     PrismaModule,
     AuthModule,
-    BillingModule,
     CronsModule,
-    QuestionModule,
-    ResponseModule,
-    TicketModule,
     ScheduleModule.forRoot(),
 
   ],
