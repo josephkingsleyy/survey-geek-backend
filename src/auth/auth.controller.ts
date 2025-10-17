@@ -16,10 +16,11 @@ export class AuthController {
   @Post('signup')
   async signup(@Body() signupDto: CreateAuthDto,
     @Req() req: Request) {
-    const userAgent = req.headers['user-agent'];
+    const userAgent = req.headers['user-agent'] || 'unknown';
     const ip =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.socket.remoteAddress;
+      req.socket.remoteAddress ||
+      'unknown';
     return this.authService.signup(signupDto, { ip, userAgent });
   }
 
@@ -33,10 +34,12 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginAuthDto,
     @Req() req: Request) {
-    const userAgent = req.headers['user-agent'];
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
     const ip =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.socket.remoteAddress;
+      req.socket.remoteAddress ||
+      'unknown';
     return this.authService.login(loginDto, { ip, userAgent });
   }
 

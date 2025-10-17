@@ -35,7 +35,7 @@ export class AuthService {
           password: hashed,
           otp,
           otpExpiresAt,
-          role: dto.role,
+          role: dto.role || 'user',
           browserAgent: data.userAgent,
           ipAddress: data.ip,
         },
@@ -83,6 +83,7 @@ export class AuthService {
 
       if (!user) throw new UnauthorizedException('Invalid credentials');
 
+      if (!user.password) throw new UnauthorizedException('Invalid credentials');
       const valid = await bcrypt.compare(dto.password, user.password);
       if (!valid) throw new UnauthorizedException('Invalid credentials');
 
@@ -107,6 +108,9 @@ export class AuthService {
       //   });
       // }
 
+      if (!user.email || !user.role) {
+        throw new InternalServerErrorException('User email or role is missing');
+      }
       const token = await this.signToken(user.id, user.email, user.role);
       return { data: user, accessToken: token };
     } catch (err) {
@@ -156,7 +160,7 @@ export class AuthService {
         });
       }
 
-      const token = await this.signToken(user.id, user.email, user.role);
+      const token = await this.signToken(user.id, user.email, user.role || 'user');
       return { user, accessToken: token };
     } catch (err) {
       throw new InternalServerErrorException(err.message);
@@ -271,6 +275,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
+    if (!user.password) throw new UnauthorizedException('Password not set for this user');
     const valid = await bcrypt.compare(oldPassword, user.password);
     if (!valid) throw new UnauthorizedException('Old password is incorrect');
 
