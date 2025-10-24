@@ -16,6 +16,7 @@ import { SectionModule } from './section/section.module';
 import { SurveyModule } from './survey/survey.module';
 import { SurveyInterestModule } from './survey-interest/survey-interest.module';
 import { TicketModule } from './ticket/ticket.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 
 @Module({
@@ -34,9 +35,19 @@ import { TicketModule } from './ticket/ticket.module';
     SurveyInterestModule,
     TicketModule,
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,        // time-to-live in seconds (1 minute)
+        limit: 10,      // max requests per IP within that minute
+      },
+    ]),
   ],
   controllers: [AppController],
   providers: [AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
