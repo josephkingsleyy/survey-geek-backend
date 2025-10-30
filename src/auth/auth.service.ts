@@ -38,14 +38,16 @@ export class AuthService {
           role: dto.role || 'user',
           browserAgent: data.userAgent,
           ipAddress: data.ip,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
         },
       });
 
-      // await sendEmail({
-      //   to: dto.email,
-      //   subject: 'Verify your email',
-      //   text: `Your OTP is: ${otp}`,
-      // });
+      await sendEmail({
+        to: dto.email,
+        subject: 'Verify your email',
+        text: `Your OTP is: ${otp}`,
+      });
 
       return { message: 'User registered. Please verify email with OTP sent to your inbox.' };
     } catch (err) {
@@ -91,22 +93,22 @@ export class AuthService {
       const isNewDevice =
         user.ipAddress !== data.ip || user.browserAgent !== data.userAgent;
 
-      // if (isNewDevice) {
-      //   await sendEmail({
-      //     to: user.email,
-      //     subject: 'New Login Detected',
-      //     text: `We noticed a login from a new device or browser.
-      //             Details:
-      //             - IP Address: ${data.ip}
-      //             - Browser: ${data.userAgent}
-      //             If this was you, no action is needed. Otherwise, please reset your password immediately.`,
-      //   });
-      //   // 2️⃣ Update the stored info
-      //   await this.prisma.user.update({
-      //     where: { id: user.id },
-      //     data: { ipAddress: data.ip, browserAgent: data.userAgent },
-      //   });
-      // }
+      if (isNewDevice) {
+        await sendEmail({
+          to: user.email,
+          subject: 'New Login Detected',
+          text: `We noticed a login from a new device or browser.
+                  Details:
+                  - IP Address: ${data.ip}
+                  - Browser: ${data.userAgent}
+                  If this was you, no action is needed. Otherwise, please reset your password immediately.`,
+        });
+        // 2️⃣ Update the stored info
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { ipAddress: data.ip, browserAgent: data.userAgent },
+        });
+      }
 
       if (!user.email || !user.role) {
         throw new InternalServerErrorException('User email or role is missing');
