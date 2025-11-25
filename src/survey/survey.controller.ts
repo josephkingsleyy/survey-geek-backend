@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
-import { UpdateSurveyDto } from './dto/update-survey.dto';
+import { ReorderSectionsDto, UpdateSectionDto, UpdateSurveyDto } from './dto/update-survey.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -75,13 +75,37 @@ export class SurveyController {
     }
   }
 
-  @Patch(':id')
-  async update(
+  // @Patch(':id')
+  // async update(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @Body() updateSurveyDto: UpdateSurveyDto,
+  // ) {
+  //   try {
+  //     return await this.surveyService.update(id, updateSurveyDto);
+  //   } catch (err) {
+  //     throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
+  //   }
+  // }
+
+  @Patch('survey-with-question/:id')
+  async updateWithQuestion(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateSurveyDto: UpdateSurveyDto,
+    @Body() updateSurveyWithQuestionDto: UpdateSurveyDto,
   ) {
     try {
-      return await this.surveyService.update(id, updateSurveyDto);
+      return await this.surveyService.updateWithQuestion(id, updateSurveyWithQuestionDto);
+    } catch (err) {
+      throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Patch('update-section/:id')
+  async updateSection(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: ReorderSectionsDto,
+  ) {
+    try {
+      return await this.surveyService.updateSection(id, body.sections);
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
     }

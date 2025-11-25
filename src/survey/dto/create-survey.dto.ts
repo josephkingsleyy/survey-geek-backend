@@ -43,7 +43,7 @@ export class CreateQuestionAlongDto {
 
 export class CreateSurveyDto {
   @IsArray()
-  @IsInt({ each: true }) // ✅ ensures each item in array is an integer
+  @IsInt({ each: true }) 
   surveyInterestIds?: number[];
 
   @IsOptional()

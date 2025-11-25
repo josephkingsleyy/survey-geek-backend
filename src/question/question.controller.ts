@@ -11,19 +11,21 @@ export class QuestionController {
   constructor(private readonly questionService: QuestionService) { }
 
   @Post()
-  create(@Body(new ValidationPipe()) createQuestionDto: CreateQuestionDto) {
-    return this.questionService.create(createQuestionDto);
+  create(@Body(new ValidationPipe()) createQuestionDto: CreateQuestionDto,
+    @CurrentUser('sub') sub: number) {
+    return this.questionService.create(createQuestionDto, sub);
   }
 
   @Post('multiple')
   async createMany(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     body: CreateQuestionDto | CreateQuestionDto[],
+    @CurrentUser('sub') sub: number
   ) {
     if (Array.isArray(body)) {
-      return this.questionService.createMany(body); // bulk create
+      return this.questionService.createMany(body, sub); // bulk create
     }
-    return this.questionService.create(body); // single create
+    return this.questionService.create(body, sub); // single create
   }
 
   @Roles("admin")

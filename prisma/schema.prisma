@@ -208,7 +208,7 @@ model Question {
 
   text        String
   type        QuestionType // TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, etc.
-  options     String[] // for choice-based questions
+  options     String[]     @default([])
   required    Boolean      @default(false)
   scaleMin    Int? // for NPS, Likert, Rating
   scaleMax    Int? // e.g. 1–5 or 1–10
@@ -217,6 +217,7 @@ model Question {
   updatedAt   DateTime     @updatedAt
   userId      Int?
   user        User?        @relation(fields: [userId], references: [id])
+  order       Int?
 
   responses Response[]
 }
@@ -254,6 +255,7 @@ enum QuestionType {
   NET_PROMOTER_SCORE
   MATRIX
   DATE_TIME
+  TIME
 }
 
 model Notification {

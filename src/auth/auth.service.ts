@@ -94,15 +94,15 @@ export class AuthService {
         user.ipAddress !== data.ip || user.browserAgent !== data.userAgent;
 
       if (isNewDevice) {
-        await sendEmail({
-          to: user.email,
-          subject: 'New Login Detected',
-          text: `We noticed a login from a new device or browser.
-                  Details:
-                  - IP Address: ${data.ip}
-                  - Browser: ${data.userAgent}
-                  If this was you, no action is needed. Otherwise, please reset your password immediately.`,
-        });
+        // await sendEmail({
+        //   to: user.email,
+        //   subject: 'New Login Detected',
+        //   text: `We noticed a login from a new device or browser.
+        //           Details:
+        //           - IP Address: ${data.ip}
+        //           - Browser: ${data.userAgent}
+        //           If this was you, no action is needed. Otherwise, please reset your password immediately.`,
+        // });
         // 2️⃣ Update the stored info
         await this.prisma.user.update({
           where: { id: user.id },

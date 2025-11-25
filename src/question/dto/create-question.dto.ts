@@ -24,9 +24,6 @@ export class CreateQuestionDto {
   @IsInt()
   scaleMax?: number;
 
-  @IsInt()
-  userId?: number;
-
   @IsOptional()
   @IsBoolean()
   allowUpload?: boolean;

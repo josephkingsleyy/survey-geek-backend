@@ -9,8 +9,8 @@ export class QuestionService {
   constructor(private readonly prisma: PrismaService) { }
 
   // Create a question and link it to a survey
-  async create(createQuestionDto: CreateQuestionDto) {
-    const { sectionId, userId, ...rest } = createQuestionDto;
+  async create(createQuestionDto: CreateQuestionDto, userId: number) {
+    const { sectionId, ...rest } = createQuestionDto;
 
     // Ensure the survey exists
     const section = await this.prisma.survey.findUnique({
@@ -21,13 +21,13 @@ export class QuestionService {
     return this.prisma.question.create({
       data: {
         ...rest,
-        section: { connect: { id: sectionId } }, // ✅ correct
+        section: { connect: { id: sectionId } },
         user: { connect: { id: userId } },
       },
     });
   }
 
-  async createMany(questions: CreateQuestionDto[]) {
+  async createMany(questions: CreateQuestionDto[], userId: number) {
     if (!questions.length) return [];
 
     try {
@@ -43,6 +43,7 @@ export class QuestionService {
         data: questions.map(({ sectionId, ...rest }) => ({
           ...rest,
           sectionId,
+          user: { connect: { id: userId } },
         })),
       });
     } catch (error) {
