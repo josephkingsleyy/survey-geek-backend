@@ -220,6 +220,7 @@ model Question {
   order       Int?
   symbol      String?      @default("star") // emoji or icon identifier
   levels      Int?         @default(5)
+  statements  Json?        @default("[]")
 
   responses Response[]
 }

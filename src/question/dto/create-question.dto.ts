@@ -13,6 +13,17 @@ class OptionDto {
   @IsInt()
   order?: number;
 }
+class StatementsDto {
+  @IsInt()
+  id: number;
+
+  @IsString()
+  text: string;
+
+  @IsOptional()
+  @IsInt()
+  order?: number;
+}
 
 export class CreateQuestionDto {
   @IsString()
@@ -29,6 +40,12 @@ export class CreateQuestionDto {
   @ValidateNested({ each: true })
   @Type(() => OptionDto)
   options?: OptionDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => StatementsDto)
+  statements?: StatementsDto[];
 
   @IsOptional()
   @IsInt()
