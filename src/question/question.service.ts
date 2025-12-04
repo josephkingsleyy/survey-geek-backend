@@ -20,7 +20,7 @@ export class QuestionService {
 
     return this.prisma.question.create({
       data: {
-        ...rest,
+        ...rest as any,
         section: { connect: { id: sectionId } },
         user: { connect: { id: userId } },
       },
@@ -40,7 +40,7 @@ export class QuestionService {
       if (!survey) throw new NotFoundException(`Survey with ID ${sectionId} not found`);
 
       return this.prisma.question.createMany({
-        data: questions.map(({ sectionId, ...rest }) => ({
+        data: (questions as any).map(({ sectionId, ...rest }) => ({
           ...rest,
           sectionId,
           user: { connect: { id: userId } },
@@ -163,7 +163,7 @@ export class QuestionService {
     try {
       return await this.prisma.question.update({
         where: { id },
-        data: updateQuestionDto,
+        data: updateQuestionDto as any,
       });
     } catch {
       throw new NotFoundException(`Question with ID ${id} not found`);

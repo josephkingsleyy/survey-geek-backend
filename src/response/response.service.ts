@@ -8,20 +8,35 @@ export class ResponseService {
   constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateResponseDto, userId: number) {
-    return this.prisma.response.create({
-      data: {
-        answerText: dto.answerText,
-        answerOption: dto.answerOption,
-        answerOptions: dto.answerOptions,
-        rating: dto.rating,
-        uploadUrl: dto.uploadUrl,
-
-        // Relations must be connected this way
-        user: { connect: { id: dto.userId } },
-        survey: { connect: { id: dto.surveyId } },
-        question: { connect: { id: dto.questionId } },
-      },
-    });
+    try {
+      return this.prisma.response.upsert({
+        where: {
+          userId_questionId: {
+            userId,
+            questionId: dto.questionId,
+          },
+        },
+        update: {
+          answerText: dto.answerText,
+          answerOption: dto.answerOption,
+          answerOptions: dto.answerOptions,
+          rating: dto.rating,
+          uploadUrl: dto.uploadUrl,
+        },
+        create: {
+          answerText: dto.answerText,
+          answerOption: dto.answerOption,
+          answerOptions: dto.answerOptions,
+          rating: dto.rating,
+          uploadUrl: dto.uploadUrl,
+          user: { connect: { id: userId } },
+          survey: { connect: { id: dto.surveyId } },
+          question: { connect: { id: dto.questionId } },
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to submit response: ' + error.message);
+    }
   }
 
   async findAll(page = 1, limit = 10) {

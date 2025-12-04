@@ -208,7 +208,7 @@ model Question {
 
   text        String
   type        QuestionType // TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, etc.
-  options     String[]     @default([])
+  options     Json         @default("[]")
   required    Boolean      @default(false)
   scaleMin    Int? // for NPS, Likert, Rating
   scaleMax    Int? // e.g. 1–5 or 1–10
@@ -218,6 +218,8 @@ model Question {
   userId      Int?
   user        User?        @relation(fields: [userId], references: [id])
   order       Int?
+  symbol      String?      @default("star") // emoji or icon identifier
+  levels      Int?         @default(5)
 
   responses Response[]
 }
@@ -242,6 +244,8 @@ model Response {
   matrixCol     String? // for Matrix questions
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@unique([userId, questionId])
 }
 
 enum QuestionType {

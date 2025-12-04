@@ -109,8 +109,3 @@ export class UpdateSurveyDto {
   @IsOptional()
   requireResponse?: boolean;
 }
-
-// export class UpdateSurveyDto extends PartialType(CreateSurveyDto) {
-//   questions?: never;
-//   status?: SurveyStatus;
-// }

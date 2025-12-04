@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
+import { text } from 'stream/consumers';
 
 const prisma = new PrismaClient();
 
@@ -85,7 +86,13 @@ async function main() {
   // 5️⃣ SURVEYS + SECTIONS + QUESTIONS
   // const surveys = [];
   const surveys: Awaited<ReturnType<typeof prisma.survey.create>>[] = [];
-  const sampleOptions = [['Yes', 'No'], ['A', 'B', 'C'], ['1', '2', '3'], ['Red', 'Green'], ['Option1', 'Option2']];
+  const sampleOptions = [[{ id: 1, text: "A" }, { id: 2, text: "B" }, { id: 3, text: "C" },],
+  [{ id: 1, text: 'Yes' }, { id: 2, text: 'No' }],
+  [{ id: 1, text: 'A' }, { id: 2, text: 'B' }, { id: 3, text: 'C' }],
+  [{ id: 1, text: '1' }, { id: 2, text: '2' }, { id: 3, text: '3' }],
+  [{ id: 1, text: 'Red' }, { id: 2, text: 'Green' }, { id: 3, text: 'Blue' }],
+  [{ id: 1, text: 'Option1' }, { id: 2, text: 'Option2' }]
+  ];
 
   for (let i = 0; i < 5; i++) {
     const survey = await prisma.survey.create({
@@ -120,7 +127,7 @@ async function main() {
         sectionId: section.id, // ✅ correct relation
         text: `Question ${i + 1} for survey ${survey.id}`,
         type: i % 2 === 0 ? 'SINGLE_CHOICE' : 'TEXT',
-        options: sampleOptions[i],
+        options: sampleOptions[i][0] ? sampleOptions[i] : undefined,
         scaleMin: i % 2 === 0 ? 1 : undefined,
         scaleMax: i % 2 === 0 ? 5 : undefined,
         allowUpload: false,

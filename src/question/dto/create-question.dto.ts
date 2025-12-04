@@ -1,5 +1,18 @@
-import { IsEnum, IsOptional, IsString, IsArray, IsInt, IsBoolean } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsArray, IsInt, IsBoolean, ValidateNested } from 'class-validator';
 import { QuestionType } from '@prisma/client';
+import { Type } from 'class-transformer';
+
+class OptionDto {
+  @IsInt()
+  id: number;
+
+  @IsString()
+  text: string;
+
+  @IsOptional()
+  @IsInt()
+  order?: number;
+}
 
 export class CreateQuestionDto {
   @IsString()
@@ -13,8 +26,9 @@ export class CreateQuestionDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  options?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => OptionDto)
+  options?: OptionDto[];
 
   @IsOptional()
   @IsInt()
@@ -27,6 +41,21 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsBoolean()
   allowUpload?: boolean;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  levels?: number;
+
+
+  @IsOptional()
+  @IsString()
+  symbol?: string;
 }
-
-
