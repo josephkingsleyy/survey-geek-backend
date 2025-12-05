@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { last } from 'rxjs';
+import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class QuestionService {
@@ -53,7 +54,7 @@ export class QuestionService {
   }
 
   // Get all questions
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = Limit) {
     try {
       const skip = (page - 1) * limit;
       const [questions, total] = await Promise.all([
@@ -84,7 +85,7 @@ export class QuestionService {
     }
   }
 
-  async findAllMyQuestions(userId: number, page = 1, limit = 10) {
+  async findAllMyQuestions(userId: number, page = 1, limit = Limit) {
     try {
       const skip = (page - 1) * limit;
       const [questions, total] = await Promise.all([
@@ -94,7 +95,9 @@ export class QuestionService {
           take: limit,
           include: {
             section: {
-              include: { survey: true }, // ✅ nested include
+              include: {
+                survey: true,
+              },
             },
             responses: true
           },
@@ -102,6 +105,20 @@ export class QuestionService {
         }),
         this.prisma.question.count({ where: { userId } })
       ]);
+
+      for (const q of questions) {
+        if (q.matrixId) {
+          const matrixIdInt = typeof q.matrixId === 'string' ? parseInt(q.matrixId, 10) : q.matrixId;
+
+          const matrix = await this.prisma.matrixField.findUnique({
+            where: { id: matrixIdInt },
+          });
+
+          if (matrix) {
+            q['matrix'] = matrix; // attach matrix to question
+          }
+        }
+      }
       return {
         data: questions,
         meta: {
@@ -116,6 +133,9 @@ export class QuestionService {
 
     }
   }
+
+
+
 
   // Get all questions belonging to a survey
   async findBySurvey(surveyId: number) {
@@ -158,17 +178,48 @@ export class QuestionService {
     return question;
   }
 
-  // Update a question
-  async update(id: number, updateQuestionDto: UpdateQuestionDto) {
-    try {
-      return await this.prisma.question.update({
-        where: { id },
-        data: updateQuestionDto as any,
+  async update(id: number, dto: UpdateQuestionDto) {
+    const { matrix, ...rest } = dto;
+
+    const question = await this.prisma.question.update({
+      where: { id },
+      data: rest as any,
+      include: {
+        matrix: true,
+      },
+    });
+
+    // If no matrix sent → return
+    if (!matrix) return question;
+
+    // CASE 1 — Matrix exists → update it
+    if (question.matrix) {
+      await this.prisma.matrixField.update({
+        where: { id: question.matrix.id },
+        data: matrix,
       });
-    } catch {
-      throw new NotFoundException(`Question with ID ${id} not found`);
+
+      return this.prisma.question.findUnique({
+        where: { id },
+        include: { matrix: true },
+      });
     }
+
+    // CASE 2 — No matrix exists → create one
+    const createdMatrix = await this.prisma.matrixField.create({
+      data: {
+        ...matrix,
+        question: { connect: { id } },
+      },
+    });
+
+    return this.prisma.question.findUnique({
+      where: { id },
+      include: { matrix: true },
+    });
   }
+
+
 
   // Delete a question
   async remove(id: number) {

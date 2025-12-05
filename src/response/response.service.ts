@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException, NotFoundException } from '@ne
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateResponseDto } from './dto/create-response.dto';
 import { UpdateResponseDto } from './dto/update-response.dto';
+import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class ResponseService {
@@ -39,7 +40,7 @@ export class ResponseService {
     }
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = Limit) {
     try {
       const skip = (page - 1) * limit;
 
@@ -64,7 +65,7 @@ export class ResponseService {
       throw new Error(`Failed to retrieve responses: ${error.message}`);
     }
   }
-  async findAllMyResponses(userId: number, page = 1, limit = 10) {
+  async findAllMyResponses(userId: number, page = 1, limit = Limit) {
     try {
       const skip = (page - 1) * limit;
 

@@ -206,23 +206,41 @@ model Question {
   section     Section @relation("SectionQuestions", fields: [sectionId], references: [id])
   description String?
 
-  text        String
-  type        QuestionType // TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, etc.
-  options     Json         @default("[]")
-  required    Boolean      @default(false)
-  scaleMin    Int? // for NPS, Likert, Rating
-  scaleMax    Int? // e.g. 1–5 or 1–10
-  allowUpload Boolean? // for Upload questions
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userId      Int?
-  user        User?        @relation(fields: [userId], references: [id])
-  order       Int?
-  symbol      String?      @default("star") // emoji or icon identifier
-  levels      Int?         @default(5)
-  statements  Json?        @default("[]")
+  text          String
+  type          QuestionType // TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, etc.
+  options       Json         @default("[]")
+  required      Boolean      @default(false)
+  scaleMin      Int? // for NPS, Likert, Rating
+  scaleMax      Int? // e.g. 1–5 or 1–10
+  allowUpload   Boolean? // for Upload questions
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  userId        Int?
+  user          User?        @relation(fields: [userId], references: [id])
+  order         Int?
+  symbol        String?      @default("star") // emoji or icon identifier
+  levels        Int?         @default(5)
+  statements    Json?        @default("[]")
+  maxFiles      Int?         @default(1)
+  uploadedFiles Json?        @default("[]") // store array of file metadata
+  maxSize       Int?         @default(2048) // in kilobytes (2MB default)
+  matrix        MatrixField? @relation(fields: [matrixId], references: [id])
+  matrixId      Int?         @unique
 
   responses Response[]
+}
+
+model MatrixField {
+  id Int @id @default(autoincrement())
+
+  operator String // "add" | "subtract" | "multiply" | "divide"
+
+  rows String[] // e.g ["Row 1", "Row 2", ...]
+  cols String[] // e.g ["Col 1", "Col 2"]
+  data Json // e.g [["1","2"],["3","4"]]
+
+  // Back relation
+  question Question?
 }
 
 model Response {

@@ -6,6 +6,7 @@ import {
 import { CreateSectionDto } from './dto/create-section.dto';
 import { UpdateSectionDto } from './dto/update-section.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class SectionService {
@@ -35,7 +36,7 @@ export class SectionService {
   }
 
   // 🔹 Get all sections (with pagination + optional survey filter)
-  async findAll(page = 1, limit = 10, surveyId?: number) {
+  async findAll(page = 1, limit = Limit, surveyId?: number) {
     const skip = (page - 1) * limit;
 
     const where = surveyId ? { surveyId } : {};

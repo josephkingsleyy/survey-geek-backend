@@ -4,6 +4,7 @@ import { CreateSurveyDto } from './dto/create-survey.dto';
 import { UpdateSectionDto, UpdateSurveyDto } from './dto/update-survey.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { SurveyStatus, QuestionType } from '@prisma/client';
+import { Limit } from 'src/common/utils/app';
 
 
 @Injectable()
@@ -175,7 +176,7 @@ export class SurveyService {
 
 
   // 🔹 Admin: get all surveys with pagination
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = Limit) {
     const skip = (page - 1) * limit;
 
     const [surveys, total] = await Promise.all([
@@ -204,7 +205,7 @@ export class SurveyService {
     };
   }
 
-  async findAllByUser(userId: number, page = 1, limit = 10) {
+  async findAllByUser(userId: number, page = 1, limit = Limit) {
     const skip = (page - 1) * limit;
 
     const [surveys, total] = await Promise.all([
@@ -245,7 +246,7 @@ export class SurveyService {
           include: {
             questions: {
               include: {
-                responses: true, // Optional: if you want each question’s responses
+                responses: true,
               },
             },
           },
@@ -261,8 +262,23 @@ export class SurveyService {
       throw new NotFoundException(`Survey with ID ${id} not found`);
     }
 
+    // Attach matrix manually if matrixId exists
+    for (const section of survey.sections) {
+      for (const question of section.questions) {
+        if (question.matrixId) {
+          const matrix = await this.prisma.matrixField.findUnique({
+            where: { id: question.matrixId },
+          });
+          if (matrix) {
+            question['matrix'] = matrix;
+          }
+        }
+      }
+    }
+
     return survey;
   }
+
 
   // async update(id: number, updateSurveyDto: UpdateSurveyDto) {
   //   const { surveyInterestIds, ...data } = updateSurveyDto;

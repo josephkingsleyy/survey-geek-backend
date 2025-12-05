@@ -3,6 +3,7 @@ import { CreateTicketDto } from './create-ticket.dto';
 import { IsOptional, IsInt, Min, IsString, IsEnum, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TicketPriority, TicketStatus } from '@prisma/client';
+import { Limit } from 'src/common/utils/app';
 
 
 export class UpdateTicketDto extends PartialType(CreateTicketDto) {
@@ -29,5 +30,5 @@ export class PaginationDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  limit?: number = 10;
+  limit?: number = Limit;
 }

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { NotificationService } from 'src/notification/notification.service';
+import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class PaymentService {
@@ -108,7 +109,7 @@ export class PaymentService {
   }
 
   // Find all payments
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = Limit) {
     try {
       const skip = (page - 1) * limit;
       const [payments, total] = await Promise.all([
@@ -134,7 +135,7 @@ export class PaymentService {
     }
   }
 
-  async findMyPayments(userId: number, page = 1, limit = 10) {
+  async findMyPayments(userId: number, page = 1, limit = Limit) {
     try {
       const skip = (page - 1) * limit;
 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBillingDto } from './dto/create-billing.dto';
 import { UpdateBillingDto } from './dto/update-billing.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class BillingService {
@@ -26,7 +27,7 @@ export class BillingService {
     }
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = Limit) {
     try {
       const skip = (page - 1) * limit;
       const [billings, total] = await Promise.all([

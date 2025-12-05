@@ -5,3 +5,5 @@ export const appProvider = {
     provide: APP_GUARD,
     useClass: RolesGuard,
 }
+
+export const Limit = 20;

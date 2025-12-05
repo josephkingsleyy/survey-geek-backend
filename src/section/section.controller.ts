@@ -12,6 +12,7 @@ import {
 import { SectionService } from './section.service';
 import { CreateSectionDto } from './dto/create-section.dto';
 import { UpdateSectionDto } from './dto/update-section.dto';
+import { Limit } from 'src/common/utils/app';
 
 @Controller('sections')
 export class SectionController {
@@ -27,7 +28,7 @@ export class SectionController {
   @Get()
   async findAll(
     @Query('page', ParseIntPipe) page = 1,
-    @Query('limit', ParseIntPipe) limit = 10,
+    @Query('limit', ParseIntPipe) limit = Limit,
     @Query('surveyId') surveyId?: string,
   ) {
     return this.sectionService.findAll(page, limit, surveyId ? +surveyId : undefined);
