@@ -1,4 +1,20 @@
-import { IsString, IsOptional, IsInt, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsArray, Validate, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class AnswerOptionDto {
+  @IsInt()
+  id: number;
+
+  @IsString()
+  text: string;
+}
+class MatrixAnswerDto {
+  @IsInt()
+  rowId: number;
+
+  @IsInt()
+  colId: number;
+}
 
 export class CreateResponseDto {
   @IsInt()
@@ -11,13 +27,18 @@ export class CreateResponseDto {
   @IsString()
   answerText?: string; // for text-based answers
 
+  // SINGLE CHOICE
   @IsOptional()
-  @IsString()
-  answerOption?: string; // for SINGLE_CHOICE
+  @ValidateNested()
+  @Type(() => AnswerOptionDto)
+  answerOption?: AnswerOptionDto;
 
+  // MULTIPLE CHOICE
   @IsOptional()
   @IsArray()
-  answerOptions?: string[]; // for MULTIPLE_CHOICE
+  @ValidateNested({ each: true })
+  @Type(() => AnswerOptionDto)
+  answerOptions?: AnswerOptionDto[];
 
   @IsOptional()
   @IsInt()
@@ -29,4 +50,10 @@ export class CreateResponseDto {
 
   @IsInt()
   surveyId?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MatrixAnswerDto)
+  matrixAnswer?: MatrixAnswerDto[]; // for MATRIX type questions
 }

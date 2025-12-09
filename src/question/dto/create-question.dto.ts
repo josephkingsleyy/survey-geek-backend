@@ -53,6 +53,11 @@ class MatrixFieldDto {
   data: string[][]; // e.g., [["1","2"],["3","4"]]
 }
 
+export enum QuestionStatusDto {
+  DRAFT = 'DRAFT',
+  PUBLISH = 'PUBLISH',
+}
+
 export class CreateQuestionDto {
   @IsString()
   text: string;
@@ -121,5 +126,9 @@ export class CreateQuestionDto {
   @ValidateNested()
   @Type(() => MatrixFieldDto)
   matrix?: MatrixFieldDto;
+
+  @IsOptional()
+  @IsEnum(QuestionStatusDto)
+  status?: QuestionStatusDto;
   
 }

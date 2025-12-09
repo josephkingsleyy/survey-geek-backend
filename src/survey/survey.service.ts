@@ -244,14 +244,9 @@ export class SurveyService {
       include: {
         sections: {
           include: {
-            questions: {
-              include: {
-                responses: true,
-              },
-            },
+            questions: true,
           },
         },
-        responses: true,
         user: {
           select: { id: true, email: true },
         },

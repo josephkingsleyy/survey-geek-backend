@@ -200,6 +200,11 @@ model Section {
   questions Question[] @relation("SectionQuestions")
 }
 
+enum QuestionStatus {
+  DRAFT
+  PUBLISH
+}
+
 model Question {
   id          Int     @id @default(autoincrement())
   sectionId   Int
@@ -228,6 +233,7 @@ model Question {
   matrixId      Int?         @unique
 
   responses Response[]
+  status    QuestionStatus @default(DRAFT)
 }
 
 model MatrixField {
@@ -255,14 +261,15 @@ model Response {
   question   Question @relation(fields: [questionId], references: [id])
 
   answerText    String? // for TEXT answers
-  answerOption  String? // for SINGLE_CHOICE
-  answerOptions String[] // for MULTIPLE_CHOICE
+  answerOption  Json? // for SINGLE_CHOICE
+  answerOptions Json? // for MULTIPLE_CHOICE
   rating        Int? // for RATING, Likert, NPS
   uploadUrl     String? // for uploads
   matrixRow     String? // for Matrix questions
   matrixCol     String? // for Matrix questions
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  matrixAnswer  Json?
 
   @@unique([userId, questionId])
 }

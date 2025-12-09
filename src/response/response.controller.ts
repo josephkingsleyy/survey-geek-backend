@@ -25,9 +25,9 @@ export class ResponseController {
   @Post()
   async create(
     @Body() createResponseDto: CreateResponseDto,
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') sub: number,
   ) {
-    return this.responseService.create(createResponseDto, userId);
+    return this.responseService.create(createResponseDto, sub);
   }
 
   @Roles('admin')
@@ -54,6 +54,14 @@ export class ResponseController {
   @Get('survey/:surveyId')
   async findBySurvey(@Param('surveyId', ParseIntPipe) surveyId: number) {
     return this.responseService.findBySurvey(surveyId);
+  }
+
+  @Get('my-survey/:surveyId')
+  async findMySurvey(
+    @Param('surveyId', ParseIntPipe) surveyId: number,
+    @CurrentUser('sub') sub: number,
+  ) {
+    return this.responseService.findMySurvey(surveyId, sub);
   }
 
   @Get(':id')

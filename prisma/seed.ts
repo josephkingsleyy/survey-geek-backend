@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
-import { text } from 'stream/consumers';
 
 const prisma = new PrismaClient();
 
@@ -151,7 +150,15 @@ async function main() {
         surveyId: surveys[i].id,
         questionId: question!.id,
         answerText: i % 2 === 0 ? `Answer text ${i}` : null,
-        answerOption: i % 2 === 0 ? 'Yes' : null,
+        answerOption: i % 2 === 0
+          ? [{ id: 1, text: "Yes" }]
+          : [],
+        answerOptions: i % 2 === 0
+          ? [
+            { id: 1, text: "Yes" },
+            { id: 2, text: "No" },
+          ]
+          : [],
         rating: i % 2 === 0 ? 4 : null,
         updatedAt: new Date(),
       },

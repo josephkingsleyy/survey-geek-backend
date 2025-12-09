@@ -99,7 +99,7 @@ export class QuestionService {
                 survey: true,
               },
             },
-            responses: true
+            // responses: true
           },
           orderBy: { createdAt: 'desc' },
         }),
@@ -146,7 +146,7 @@ export class QuestionService {
         },
       },
       include: {
-        responses: true,
+        // responses: true,
         section: {
           include: {
             survey: true, // ✅ optional: include survey info
