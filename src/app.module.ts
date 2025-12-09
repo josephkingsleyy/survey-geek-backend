@@ -17,6 +17,8 @@ import { SurveyModule } from './survey/survey.module';
 import { SurveyInterestModule } from './survey-interest/survey-interest.module';
 import { TicketModule } from './ticket/ticket.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { ConfigModule } from '@nestjs/config';
 
 
 @Module({
@@ -41,6 +43,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
         limit: 10,      // max requests per IP within that minute
       },
     ]),
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService,
