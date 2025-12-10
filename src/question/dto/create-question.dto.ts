@@ -37,6 +37,10 @@ class FilesDto {
 }
 
 class MatrixFieldDto {
+  @IsOptional()
+  @IsInt()
+  id?: number;
+
   @IsString()
   operator: string; // "add" | "subtract" | "multiply" | "divide"
 
@@ -130,5 +134,5 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsEnum(QuestionStatusDto)
   status?: QuestionStatusDto;
-  
+
 }
