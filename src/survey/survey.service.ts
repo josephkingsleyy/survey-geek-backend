@@ -569,13 +569,20 @@ export class SurveyService {
     });
   }
 
-
-  // 🔹 Delete survey
   async remove(id: number) {
     const survey = await this.prisma.survey.findUnique({ where: { id } });
     if (!survey) {
       throw new NotFoundException(`Survey with ID ${id} not found`);
     }
+
+    // delete children first
+    await this.prisma.section.deleteMany({ where: { surveyId: id } });
+    await this.prisma.question.deleteMany({
+      where: { section: { surveyId: id } },
+    });
+
+    // now delete survey
     return this.prisma.survey.delete({ where: { id } });
   }
+
 }

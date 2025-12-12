@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateSurveyDto } from './create-survey.dto';
 import { SurveyStatus } from '@prisma/client';
-import { IsArray, IsInt, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Type } from 'class-transformer';
 
 
@@ -108,4 +108,12 @@ export class UpdateSurveyDto {
 
   @IsOptional()
   requireResponse?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: Date;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: Date;
 }

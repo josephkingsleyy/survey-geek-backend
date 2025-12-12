@@ -224,9 +224,13 @@ export class QuestionService {
   // Delete a question
   async remove(id: number) {
     try {
-      return await this.prisma.question.delete({
+      const res = await this.prisma.question.delete({
         where: { id },
       });
+      return {
+        message: 'Item Deleted successfully',
+        data: res
+      }
     } catch {
       throw new NotFoundException(`Question with ID ${id} not found`);
     }
