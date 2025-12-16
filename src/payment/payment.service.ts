@@ -8,17 +8,28 @@ import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class PaymentService {
+
+  private POINT_RATE = 10; // ₦10 = 1 point
+
+
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService
   ) { }
 
   async create(dto: CreatePaymentDto, userId: number) {
-    // Generate reference
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { email: true },
     });
+
+    if (!user?.email) {
+      throw new HttpException(
+        'User email not found',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const reference = `ref_${Date.now()}_${dto.userId}`;
 
     // Save to DB first (status = pending)
@@ -70,37 +81,74 @@ export class PaymentService {
   }
 
   async verifyPayment(reference: string) {
-    
-    const url = `https://api.paystack.co/transaction/verify/${reference}`;
-
     try {
-      const response: any = await axios.get(url, {
-        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
-      });
+      const response = await axios.get(
+        `https://api.paystack.co/transaction/verify/${reference}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          },
+        },
+      );
 
       const data = response.data.data;
 
-      // Update DB
-      const payment = await this.prisma.payment.update({
-        where: { reference },
-        data: {
-          status: data.status === 'success' ? 'success' : 'failed',
-          paidAt: data.paid_at ? new Date(data.paid_at) : null,
-          method: data.channel,
-          updatedAt: new Date(),
-        },
-        include: { User: true },
+      if (data.status !== 'success') {
+        throw new HttpException(
+          'Payment not successful',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Atomic operation
+      const result = await this.prisma.$transaction(async (tx) => {
+        const payment = await tx.payment.update({
+          where: { reference },
+          data: {
+            status: 'success',
+            paidAt: new Date(data.paid_at),
+            method: data.channel,
+            updatedAt: new Date(),
+          },
+        });
+
+        const wallet =
+          (await tx.wallet.findUnique({
+            where: { userId: payment.userId },
+          })) ||
+          (await tx.wallet.create({
+            data: { userId: payment.userId },
+          }));
+
+        await tx.wallet.update({
+          where: { id: wallet.id },
+          data: {
+            balance: { increment: payment.amount },
+          },
+        });
+
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'credit',
+            amount: payment.amount,
+            description: 'Wallet funded via Paystack',
+            reference: payment.reference,
+          },
+        });
+
+        return payment;
       });
 
       await this.notificationService.create({
-        userId: payment.userId,
+        userId: result.userId,
         title: 'Payment Successful',
-        message: `Your payment of ${payment.amount} ${payment.currency} was successful.`,
+        message: `Your wallet has been credited with ${result.amount} NGN`,
         type: 'payment',
       });
 
-      return payment;
-    } catch (err) {
+      return result;
+    } catch (error) {
       throw new HttpException(
         'Paystack verification failed',
         HttpStatus.BAD_REQUEST,
@@ -190,5 +238,53 @@ export class PaymentService {
     });
   }
 
+  async buyPoints(userId: number, points: number) {
+    const cost = points * this.POINT_RATE;
+
+    return this.prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({
+        where: { userId },
+      });
+
+      if (!wallet || wallet.balance < cost) {
+        throw new HttpException(
+          'Insufficient wallet balance',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: {
+          balance: { decrement: cost },
+          points: { increment: points },
+        },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'points_purchase',
+          amount: cost,
+          points,
+          description: `Purchased ${points} points`,
+        },
+      });
+
+      return { balanceSpent: cost, pointsAdded: points };
+    });
+  }
+
+  async getWallet(id: number) {
+    return this.prisma.wallet.findUnique({
+      where: { id },
+      include: {
+        transactions: {
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
+      },
+    });
+  }
 
 }

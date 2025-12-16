@@ -11,6 +11,7 @@ import {
 import { Type } from 'class-transformer';
 import { CreateQuestionDto } from 'src/question/dto/create-question.dto';
 import { QuestionType, SurveyStatus } from '@prisma/client';
+import { PartialType } from '@nestjs/mapped-types';
 
 
 export class CreateQuestionAlongDto {
@@ -81,3 +82,6 @@ export class CreateSurveyDto {
   @Type(() => CreateQuestionAlongDto)
   questions?: CreateQuestionAlongDto[];
 }
+
+
+export class UpdateSurveysDto extends PartialType(CreateSurveyDto) {}

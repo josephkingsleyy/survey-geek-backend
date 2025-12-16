@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { CreatePaymentDto } from './dto/create-payment.dto';
+import { BuyPointsDto, CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { PaginationDto } from 'src/common/utils/pagination.dto';
@@ -20,7 +20,7 @@ export class PaymentController {
   @Roles('admin')
   @Get()
   findAll(
-    @Query() pagination: PaginationDto
+    @Query() pagination: PaginationDto,
   ) {
     return this.paymentService.findAll(pagination.page,
       pagination.limit);
@@ -43,7 +43,8 @@ export class PaymentController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
+  update(@Param('id') id: string,
+    @Body() updatePaymentDto: UpdatePaymentDto) {
     return this.paymentService.update(+id, updatePaymentDto);
   }
 
@@ -52,16 +53,21 @@ export class PaymentController {
     return this.paymentService.remove(+id);
   }
 
-  @Post('initialize')
-  async initializePayment(@Body() dto: CreatePaymentDto,
-    @CurrentUser('userId') userId: number,
-
-  ) {
-    return this.paymentService.create(dto, userId);
-  }
-
   @Get('callback/check')
   async paymentCallback(@Query('reference') reference: string) {
     return this.paymentService.verifyPayment(reference);
+  }
+
+  @Post('buy-points')
+  buyPoints(
+    @CurrentUser('sub') sub: number,
+    @Body() dto: BuyPointsDto,
+  ) {
+    return this.paymentService.buyPoints(sub, dto.points);
+  }
+
+  @Get('wallet')
+  getWallet(@CurrentUser('sub') sub: number) {
+    return this.paymentService.getWallet(sub);
   }
 }

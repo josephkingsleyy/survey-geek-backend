@@ -23,6 +23,33 @@ model Billing {
   user      User?     @relation(fields: [userId], references: [id])
 }
 
+model Wallet {
+  id           Int                 @id @default(autoincrement())
+  userId       Int                 @unique
+  user         User                @relation(fields: [userId], references: [id])
+  balance      Float               @default(0) // Real money
+  points       Int                 @default(0) // Virtual points
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id       Int          @id @default(autoincrement())
+  walletId Int
+  wallet   Wallet       @relation(fields: [walletId], references: [id])
+  type     String // "credit" | "debit" | "points_earn" | "points_spend"
+  amount   Float? // For money
+  points   Int? // For points
+  event    RewardEvent?
+
+  description String?
+  reference   String?  @unique
+  createdAt   DateTime @default(now())
+
+  @@index([walletId])
+}
+
 model Payment {
   id          Int       @id @default(autoincrement())
   amount      Float
@@ -156,6 +183,10 @@ model User {
 
   resetOtp          String? // temporary OTP
   resetOtpExpiresAt DateTime? // OTP expiry
+  wallet            Wallet?
+
+  referralsMade Referral[] @relation("UserReferrals")
+  referralUsed  Referral?  @relation("UserReferred")
 }
 
 enum SurveyStatus {
@@ -297,4 +328,25 @@ model Notification {
   type      String // e.g., "payment", "survey", "system"
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Referral {
+  id           Int      @id @default(autoincrement())
+  referrerId   Int
+  referredId   Int      @unique
+  pointsEarned Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  referrer User @relation("UserReferrals", fields: [referrerId], references: [id])
+  referred User @relation("UserReferred", fields: [referredId], references: [id])
+
+  @@index([referrerId])
+}
+
+enum RewardEvent {
+  REFERRAL_SIGNUP
+  SURVEY_PUBLISH
+  SURVEY_RESPONSE
+  ADMIN_ADJUSTMENT
+  POINTS_PURCHASE
 }

@@ -75,17 +75,17 @@ export class SurveyController {
     }
   }
 
-  // @Patch(':id')
-  // async update(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Body() updateSurveyDto: UpdateSurveyDto,
-  // ) {
-  //   try {
-  //     return await this.surveyService.update(id, updateSurveyDto);
-  //   } catch (err) {
-  //     throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
-  //   }
-  // }
+  @Patch(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateSurveyDto: UpdateSurveyDto,
+  ) {
+    try {
+      return await this.surveyService.update(id, updateSurveyDto);
+    } catch (err) {
+      throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 
   @Patch('survey-with-question/:id')
   async updateWithQuestion(
@@ -118,5 +118,13 @@ export class SurveyController {
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Patch(':id/publish')
+  publishSurvey(
+    @Param('id') id: string,
+    @CurrentUser('sub') userId: number,
+  ) {
+    return this.surveyService.publishSurvey(+id, userId);
   }
 }

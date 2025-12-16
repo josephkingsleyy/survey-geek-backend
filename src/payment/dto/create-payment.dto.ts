@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsDate, IsInt } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsDate, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreatePaymentDto {
@@ -33,4 +33,11 @@ export class CreatePaymentDto {
   @IsInt()
   @IsNotEmpty()
   userId: number;
+}
+
+
+export class BuyPointsDto {
+  @IsInt()
+  @Min(1)
+  points: number;
 }

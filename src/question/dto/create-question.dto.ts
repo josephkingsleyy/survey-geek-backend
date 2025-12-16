@@ -135,4 +135,8 @@ export class CreateQuestionDto {
   @IsEnum(QuestionStatusDto)
   status?: QuestionStatusDto;
 
+  @IsOptional()
+  @IsInt()
+  order?: number;
+
 }

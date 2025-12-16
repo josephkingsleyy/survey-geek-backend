@@ -1,6 +1,6 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateSurveyDto } from './dto/create-survey.dto';
+import { CreateSurveyDto, UpdateSurveysDto } from './dto/create-survey.dto';
 import { UpdateSectionDto, UpdateSurveyDto } from './dto/update-survey.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { SurveyStatus, QuestionType } from '@prisma/client';
@@ -275,172 +275,137 @@ export class SurveyService {
   }
 
 
-  // async update(id: number, updateSurveyDto: UpdateSurveyDto) {
-  //   const { surveyInterestIds, ...data } = updateSurveyDto;
+  async update(id: number, updateSurveyDto: UpdateSurveysDto) {
+    try {
+      const updatedSurvey = await this.prisma.survey.update({
+        where: { id },
+        data: updateSurveyDto,
+      });
+      return updatedSurvey;
+    } catch (error) {
+      console.error(`Failed to update survey with ID ${id}:`, error);
+      throw new Error(`Could not update survey with ID ${id}`);
+    }
+  }
 
-  //   // if (typeof data.status === 'string') {
-  //   //   data.status = { set: data.status as SurveyStatus };
-  //   // }
 
-  //   if (surveyInterestIds) {
-  //     const existing = await this.prisma.survey.findUnique({
-  //       where: { id },
-  //       include: { surveyInterests: { select: { id: true } } },
-  //     });
+  async updateWithQuestionOld(id: number, dto: UpdateSurveyDto) {
+    const { sections, surveyInterestIds, ...surveyData } = dto;
 
-  //     const existingIds = existing?.surveyInterests.map((si) => si.id) || [];
+    // 1️⃣ Ensure survey exists
+    const existingSurvey = await this.prisma.survey.findUnique({
+      where: { id },
+      include: { surveyInterests: true },
+    });
 
-  //     const toConnect = surveyInterestIds
-  //       .filter((id) => !existingIds.includes(id))
-  //       .map((id) => ({ id }));
+    if (!existingSurvey) {
+      throw new NotFoundException('Survey not found');
+    }
 
-  //     const toDisconnect = existingIds
-  //       .filter((id) => !surveyInterestIds.includes(id))
-  //       .map((id) => ({ id }));
+    // 2️⃣ Update simple survey fields first
+    await this.prisma.survey.update({
+      where: { id },
+      data: surveyData,
+    });
 
-  //     return this.prisma.survey.update({
-  //       where: { id },
-  //       data: {
-  //         ...data,
-  //         surveyInterests: {
-  //           connect: toConnect,
-  //           disconnect: toDisconnect,
-  //         },
-  //       },
-  //       include: {
-  //         surveyInterests: true,
-  //         sections: { include: { questions: true } },
-  //       },
-  //     });
-  //   }
+    // 3️⃣ Update survey interests (Many-to-Many)
+    if (surveyInterestIds) {
+      const existingIds = existingSurvey.surveyInterests.map((i) => i.id);
 
-  //   return this.prisma.survey.update({
-  //     where: { id },
-  //     data,
-  //     include: {
-  //       surveyInterests: true,
-  //       sections: { include: { questions: true } }, // ✅ fixed include
-  //     },
-  //   });
-  // }
+      const toConnect = surveyInterestIds
+        .filter((x) => !existingIds.includes(x))
+        .map((id) => ({ id }));
 
-  // async updateWithQuestionOld(id: number, dto: UpdateSurveyDto) {
-  //   const { sections, surveyInterestIds, ...surveyData } = dto;
+      const toDisconnect = existingIds
+        .filter((x) => !surveyInterestIds.includes(x))
+        .map((id) => ({ id }));
 
-  //   // 1️⃣ Ensure survey exists
-  //   const existingSurvey = await this.prisma.survey.findUnique({
-  //     where: { id },
-  //     include: { surveyInterests: true },
-  //   });
+      await this.prisma.survey.update({
+        where: { id },
+        data: {
+          surveyInterests: {
+            connect: toConnect,
+            disconnect: toDisconnect,
+          },
+        },
+      });
+    }
 
-  //   if (!existingSurvey) {
-  //     throw new NotFoundException('Survey not found');
-  //   }
+    // 4️⃣ Handle sections + questions
+    if (sections?.length) {
+      for (const section of sections) {
+        let sectionId = section.id;
 
-  //   // 2️⃣ Update simple survey fields first
-  //   await this.prisma.survey.update({
-  //     where: { id },
-  //     data: surveyData,
-  //   });
+        if (!sectionId) {
+          // CREATE new section
+          const created = await this.prisma.section.create({
+            data: {
+              surveyId: id,
+              title: section.title,
+              description: section.description,
+              order: section.order,
+            },
+          });
 
-  //   // 3️⃣ Update survey interests (Many-to-Many)
-  //   if (surveyInterestIds) {
-  //     const existingIds = existingSurvey.surveyInterests.map((i) => i.id);
+          sectionId = created.id;
+        } else {
+          // UPDATE existing section
+          await this.prisma.section.update({
+            where: { id: sectionId },
+            data: {
+              title: section.title,
+              description: section.description,
+              order: section.order,
+            },
+          });
+        }
 
-  //     const toConnect = surveyInterestIds
-  //       .filter((x) => !existingIds.includes(x))
-  //       .map((id) => ({ id }));
+        // 🔹 Handle questions inside this section
+        if (section.questions?.length) {
+          for (const q of section.questions) {
+            if (!q.id) {
+              // CREATE question
+              await this.prisma.question.create({
+                data: {
+                  sectionId,
+                  text: q.text || '',
+                  type: q.type || "TEXT" as any,
+                  options: q.options ?? [],
+                  required: q.required ?? false,
+                  scaleMin: q.scaleMin,
+                  scaleMax: q.scaleMax,
+                },
+              });
+            } else {
+              // UPDATE existing question
+              await this.prisma.question.update({
+                where: { id: q.id },
+                data: {
+                  text: q.text || '',
+                  type: q.type || "TEXT" as any,
+                  options: q.options ?? [],
+                  required: q.required ?? false,
+                  scaleMin: q.scaleMin,
+                  scaleMax: q.scaleMax,
+                },
+              });
+            }
+          }
+        }
+      }
+    }
 
-  //     const toDisconnect = existingIds
-  //       .filter((x) => !surveyInterestIds.includes(x))
-  //       .map((id) => ({ id }));
-
-  //     await this.prisma.survey.update({
-  //       where: { id },
-  //       data: {
-  //         surveyInterests: {
-  //           connect: toConnect,
-  //           disconnect: toDisconnect,
-  //         },
-  //       },
-  //     });
-  //   }
-
-  //   // 4️⃣ Handle sections + questions
-  //   if (sections?.length) {
-  //     for (const section of sections) {
-  //       let sectionId = section.id;
-
-  //       if (!sectionId) {
-  //         // CREATE new section
-  //         const created = await this.prisma.section.create({
-  //           data: {
-  //             surveyId: id,
-  //             title: section.title,
-  //             description: section.description,
-  //             order: section.order,
-  //           },
-  //         });
-
-  //         sectionId = created.id;
-  //       } else {
-  //         // UPDATE existing section
-  //         await this.prisma.section.update({
-  //           where: { id: sectionId },
-  //           data: {
-  //             title: section.title,
-  //             description: section.description,
-  //             order: section.order,
-  //           },
-  //         });
-  //       }
-
-  //       // 🔹 Handle questions inside this section
-  //       if (section.questions?.length) {
-  //         for (const q of section.questions) {
-  //           if (!q.id) {
-  //             // CREATE question
-  //             await this.prisma.question.create({
-  //               data: {
-  //                 sectionId,
-  //                 text: q.text || '',
-  //                 type: q.type || "TEXT" as any,
-  //                 options: q.options ?? [],
-  //                 required: q.required ?? false,
-  //                 scaleMin: q.scaleMin,
-  //                 scaleMax: q.scaleMax,
-  //               },
-  //             });
-  //           } else {
-  //             // UPDATE existing question
-  //             await this.prisma.question.update({
-  //               where: { id: q.id },
-  //               data: {
-  //                 text: q.text || '',
-  //                 type: q.type || "TEXT" as any,
-  //                 options: q.options ?? [],
-  //                 required: q.required ?? false,
-  //                 scaleMin: q.scaleMin,
-  //                 scaleMax: q.scaleMax,
-  //               },
-  //             });
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   // 5️⃣ Return updated survey with nested objects
-  //   return this.prisma.survey.findUnique({
-  //     where: { id },
-  //     include: {
-  //       surveyInterests: true,
-  //       sections: {
-  //         include: { questions: true },
-  //       },
-  //     },
-  //   });
-  // }
+    // 5️⃣ Return updated survey with nested objects
+    return this.prisma.survey.findUnique({
+      where: { id },
+      include: {
+        surveyInterests: true,
+        sections: {
+          include: { questions: true },
+        },
+      },
+    });
+  }
 
   async updateWithQuestion(id: number, dto: UpdateSurveyDto) {
     const { sections, surveyInterestIds, ...surveyData } = dto;
@@ -583,6 +548,48 @@ export class SurveyService {
 
     // now delete survey
     return this.prisma.survey.delete({ where: { id } });
+  }
+
+  async publishSurvey(id: number, userId: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const survey = await tx.survey.findUnique({
+        where: { id },
+      });
+
+      if (!survey || survey.userId !== userId) {
+        throw new HttpException('Survey not found', HttpStatus.NOT_FOUND);
+      }
+
+      const wallet = await tx.wallet.findUnique({
+        where: { userId },
+      });
+
+      if (!wallet || wallet.points < 20) {
+        throw new HttpException(
+          'Insufficient points to publish survey',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { points: { decrement: 20 } },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'points_spend',
+          points: 20,
+          description: 'Survey published',
+        },
+      });
+
+      return tx.survey.update({
+        where: { id },
+        data: { status: 'OPEN' },
+      });
+    });
   }
 
 }
