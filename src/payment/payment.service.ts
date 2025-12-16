@@ -276,15 +276,20 @@ export class PaymentService {
   }
 
   async getWallet(id: number) {
-    return this.prisma.wallet.findUnique({
-      where: { id },
-      include: {
-        transactions: {
-          orderBy: { createdAt: 'desc' },
-          take: 20,
+    try {
+      const res = await this.prisma.wallet.findUnique({
+        where: { id },
+        include: {
+          transactions: {
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+          },
         },
-      },
-    });
+      });
+      return { message: "Success", data: res }
+    } catch (error) {
+      console.log('error', error)
+    }
   }
 
 }

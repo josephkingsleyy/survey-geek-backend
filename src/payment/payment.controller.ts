@@ -66,7 +66,7 @@ export class PaymentController {
     return this.paymentService.buyPoints(sub, dto.points);
   }
 
-  @Get('wallet')
+  @Get('my/wallet')
   getWallet(@CurrentUser('sub') sub: number) {
     return this.paymentService.getWallet(sub);
   }

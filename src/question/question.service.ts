@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { last } from 'rxjs';
 import { Limit } from 'src/common/utils/app';
 
 @Injectable()
@@ -14,10 +13,14 @@ export class QuestionService {
     const { sectionId, ...rest } = createQuestionDto;
 
     // Ensure the survey exists
-    const section = await this.prisma.survey.findUnique({
+    const section = await this.prisma.section.findUnique({
       where: { id: sectionId },
+      include: {
+        survey: true,
+      }
     });
-    if (!section) throw new NotFoundException(`Survey with ID ${sectionId} not found`);
+
+    if (!section) throw new NotFoundException(`Section with ID ${sectionId} not found`);
 
     return this.prisma.question.create({
       data: {
