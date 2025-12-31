@@ -190,10 +190,12 @@ model User {
 }
 
 enum SurveyStatus {
-  DRAFT
-  OPEN
-  CLOSED
-  ARCHIVED
+  DRAFT // Created, editable, not visible
+  PUBLISHED // Live and collecting responses
+  PAUSED // Temporarily stopped
+  COMPLETED // Closed after responses or deadline
+  ARCHIVED // Old but kept for records
+  TRASH // Soft-deleted
 }
 
 model Survey {
@@ -203,6 +205,7 @@ model Survey {
 
   title           String?
   description     String?
+  surveyPurpose   String?
   status          SurveyStatus @default(DRAFT)
   requireResponse Boolean?     @default(false)
   minResponse     Int?

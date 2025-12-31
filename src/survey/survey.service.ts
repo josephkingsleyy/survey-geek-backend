@@ -587,7 +587,7 @@ export class SurveyService {
 
       return tx.survey.update({
         where: { id },
-        data: { status: 'OPEN' },
+        data: { status: 'PUBLISHED' },
       });
     });
   }

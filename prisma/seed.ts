@@ -98,7 +98,7 @@ async function main() {
       data: {
         title: `Seed Survey ${i + 1}`,
         description: `This is a seeded survey #${i + 1}`,
-        status: i % 2 === 0 ? 'OPEN' : 'DRAFT',
+        status: i % 2 === 0 ? 'DRAFT' : 'DRAFT',
         requireResponse: true,
         minResponse: 1,
         startDate: new Date(),
