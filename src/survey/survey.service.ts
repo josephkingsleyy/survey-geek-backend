@@ -176,11 +176,16 @@ export class SurveyService {
 
 
   // 🔹 Admin: get all surveys with pagination
-  async findAll(page = 1, limit = Limit) {
+  async findAll(page = 1, limit = Limit, date?: string) {
     const skip = (page - 1) * limit;
 
+    const whereClause: any = {};
+    if (date) {
+      whereClause.createdAt = { gte: new Date(date) };
+    }
     const [surveys, total] = await Promise.all([
       this.prisma.survey.findMany({
+        where: whereClause,
         skip,
         take: limit,
         include: {
@@ -205,12 +210,17 @@ export class SurveyService {
     };
   }
 
-  async findAllByUser(userId: number, page = 1, limit = Limit) {
+  async findAllByUser(userId: number, page = 1, limit = Limit, date?: string) {
     const skip = (page - 1) * limit;
+
+    const whereClause: any = { userId };
+    if (date) {
+      whereClause.createdAt = { gte: new Date(date) }; // Filter by date if provided
+    }
 
     const [surveys, total] = await Promise.all([
       this.prisma.survey.findMany({
-        where: { userId },
+        where: whereClause,
         skip,
         take: limit,
         include: {
@@ -221,7 +231,7 @@ export class SurveyService {
             },
           },
           responses: true,
-          user: { select: { id: true, email: true } },
+          user: { select: { id: true, email: true, username: true, firstName: true, lastName: true } },
           surveyInterests: true,
         },
         orderBy: { createdAt: 'desc' },

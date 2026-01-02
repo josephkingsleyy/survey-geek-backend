@@ -41,9 +41,15 @@ export class SurveyController {
   // 🔹 Admin: get all surveys with pagination
   @Roles('admin')
   @Get()
-  async findAll(@Query() pagination: PaginationDto) {
+  async findAll(
+    @Query() pagination: PaginationDto,
+    @Query('date') date?: string,
+  ) {
     try {
-      return await this.surveyService.findAll(pagination.page, pagination.limit);
+      return await this.surveyService.findAll(
+        pagination.page,
+        pagination.limit,
+        date);
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -54,12 +60,14 @@ export class SurveyController {
   async findMySurveys(
     @CurrentUser('userId') userId: number,
     @Query() pagination: PaginationDto,
+    @Query('date') date?: string,
   ) {
     try {
       return await this.surveyService.findAllByUser(
         userId,
         pagination.page,
         pagination.limit,
+        date,
       );
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);

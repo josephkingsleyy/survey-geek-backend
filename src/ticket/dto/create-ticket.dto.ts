@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsBoolean } from 'class-validator';
 
 export class CreateTicketDto {
   @IsString()
@@ -23,4 +23,14 @@ export class CreateTicketDto {
   @IsOptional()
   @IsArray()
   attachments?: { url: string; filename: string }[]; // optional attachments
+
+
+  @IsOptional()
+  @IsString()
+  thumb?: string;
+
+  @IsOptional()
+  @IsString()
+  AgentName?: string;
+
 }

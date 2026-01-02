@@ -116,4 +116,8 @@ export class UpdateSurveyDto {
   @IsOptional()
   @IsDateString()
   endDate?: Date;
+
+  @IsOptional()
+  @IsString()
+  surveyPurpose?: string;
 }

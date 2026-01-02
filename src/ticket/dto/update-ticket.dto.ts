@@ -15,6 +15,9 @@ export class UpdateTicketDto extends PartialType(CreateTicketDto) {
   @IsEnum(TicketPriority, { message: 'priority must be a valid TicketPriority enum value' })
   priority?: TicketPriority;
 
+  @IsOptional()
+  @IsInt()
+  assignedToId?: number;
 }
 
 

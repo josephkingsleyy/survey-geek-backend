@@ -44,7 +44,7 @@ export class CreateQuestionAlongDto {
 
 export class CreateSurveyDto {
   @IsArray()
-  @IsInt({ each: true }) 
+  @IsInt({ each: true })
   surveyInterestIds?: number[];
 
   @IsOptional()
@@ -81,7 +81,11 @@ export class CreateSurveyDto {
   @ValidateNested({ each: true })
   @Type(() => CreateQuestionAlongDto)
   questions?: CreateQuestionAlongDto[];
+
+  @IsOptional()
+  @IsString()
+  surveyPurpose?: string;
 }
 
 
-export class UpdateSurveysDto extends PartialType(CreateSurveyDto) {}
+export class UpdateSurveysDto extends PartialType(CreateSurveyDto) { }

@@ -194,7 +194,7 @@ enum SurveyStatus {
   PUBLISHED // Live and collecting responses
   PAUSED // Temporarily stopped
   COMPLETED // Closed after responses or deadline
-  ARCHIVED // Old but kept for records
+  PENDING // Old but kept for records
   TRASH // Soft-deleted
 }
 

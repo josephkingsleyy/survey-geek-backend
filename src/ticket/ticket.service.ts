@@ -31,8 +31,8 @@ export class TicketService {
         data: {
           title: createTicketDto.title,
           description: createTicketDto.description,
-          status: TicketStatus.OPEN,
-          priority: Priority.URGENT,
+          status: createTicketDto.status ? TicketStatus[createTicketDto.status.toUpperCase()] : TicketStatus.OPEN,
+          priority: createTicketDto.priority ? Priority[createTicketDto.priority.toUpperCase()] : Priority.LOW,
           category: createTicketDto.category,
           userId: userId,
           attachments: createTicketDto.attachments
@@ -52,17 +52,17 @@ export class TicketService {
         select: { email: true },
       });
 
-      if (admins.length > 0) {
-        for (const admin of admins) {
-          await sendEmail({
-            to: admin.email,
-            subject: 'New Ticket Created',
-            text: `A new ticket (#${ticket.id}) has been created by user ${userId}: ${ticket.title}`,
-          });
-        }
-      }
+      // if (admins.length > 0) {
+      //   for (const admin of admins) {
+      //     await sendEmail({
+      //       to: admin.email,
+      //       subject: 'New Ticket Created',
+      //       text: `A new ticket (#${ticket.id}) has been created by user ${userId}: ${ticket.title}`,
+      //     });
+      //   }
+      // }
 
-      return ticket;
+      return { message: 'Ticket created successfully', data: ticket };
     } catch (err) {
       throw new Error(err.message);
     }
@@ -120,12 +120,83 @@ export class TicketService {
         },
       });
 
-      return { total, page, limit, tickets };
+      return {
+        message: 'User tickets fetched successfully',
+        total, page, limit, data: tickets
+      };
     } catch (error) {
       throw new NotFoundException(error.message);
 
     }
   }
+
+  async getStaffList(
+    page = 1,
+    limit = Limit,
+    userId?: number,
+    userName?: string
+  ) {
+    try {
+      const skip = (page - 1) * limit;
+
+
+      const whereClause: any = {
+        role: "staff",
+      };
+
+      // Filter by userId
+      if (userId) {
+        whereClause.id = userId;
+      }
+
+      // Filter by name (first OR last)
+      if (userName) {
+        whereClause.OR = [
+          {
+            firstName: {
+              contains: userName,
+              mode: "insensitive",
+            },
+          },
+          {
+            lastName: {
+              contains: userName,
+              mode: "insensitive",
+            },
+          },
+        ];
+      }
+
+
+      const [users, total] = await this.prisma.$transaction([
+        this.prisma.user.findMany({
+          where: whereClause,
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+          include: {
+            // optional relations if you need them
+            assignedTickets: true,
+            createdTickets: true,
+          },
+        }),
+
+        this.prisma.user.count({ where: whereClause }),
+      ]);
+
+      return {
+        message: "Staff list fetched successfully",
+        data: users,
+        total,
+        page,
+        limit,
+        lastPage: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
 
 
   async findOne(id: number) {
@@ -150,7 +221,13 @@ export class TicketService {
       return this.prisma.ticket.update({
         where: { id },
         data: {
-          ...dto,
+          title: dto.title,
+          description: dto.description,
+          status: dto.status,
+          priority: dto.priority,
+          category: dto.category,
+          assignedToId: dto.assignedToId ?? undefined,
+
           attachments: dto.attachments
             ? {
               create: dto.attachments.map((a) => ({
@@ -159,7 +236,17 @@ export class TicketService {
               })),
             }
             : undefined,
+
+          // attachments: dto.attachments?.length
+          //   ? {
+          //     create: dto.attachments.map((a) => ({
+          //       url: a.url,
+          //       filename: a.filename,
+          //     })),
+          //   }
+          //   : undefined,
         },
+
         include: { attachments: true },
       });
     } catch (err) {

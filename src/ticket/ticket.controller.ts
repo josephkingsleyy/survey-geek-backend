@@ -17,6 +17,8 @@ export class TicketController {
     @Body() createTicketDto: CreateTicketDto,
     @CurrentUser('userId') userId: number,
   ) {
+    console.log('userId', userId);
+    
     try {
       return await this.ticketService.create(createTicketDto, userId);
     } catch (err) {
@@ -51,6 +53,24 @@ export class TicketController {
     }
   }
 
+  @Get('staff-list')
+  async getStaffList(
+    @Query() pagination: PaginationDto,
+    @Query('userName') userName: string,
+    @Query('userId') userId: string,
+  ) {
+    try {
+      return await this.ticketService.getStaffList(
+        pagination.page,
+        pagination.limit,
+        userId ? parseInt(userId) : undefined,
+        userName,
+      );
+    } catch (err) {
+      throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -63,7 +83,7 @@ export class TicketController {
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTicketDto) {
     try {
-      return await this.ticketService.update(id, dto);
+      return await this.ticketService.update(+id, dto);
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.NOT_FOUND);
     }
