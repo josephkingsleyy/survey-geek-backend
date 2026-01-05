@@ -24,12 +24,13 @@ export class PaymentService {
       select: { email: true },
     });
 
-    if (!user?.email) {
+    if (!user) {
       throw new HttpException(
-        'User email not found',
+        'User not found',
         HttpStatus.BAD_REQUEST,
       );
     }
+
 
     const reference = `ref_${Date.now()}_${dto.userId}`;
 
@@ -47,12 +48,57 @@ export class PaymentService {
       },
     });
 
+    if (dto.method === "flutterwave") {
+      // Call Flutterwave API
+      try {
+        const url = 'https://api.flutterwave.com/v3/payments';
+
+        const response = await axios.post(
+          url,
+          {
+            tx_ref: reference,
+            amount: dto.amount,
+            currency: dto.currency ?? 'NGN',
+            redirect_url: process.env.FLUTTERWAVE_CALLBACK_URL,
+            customer: {
+              email: user.email,
+            },
+            customizations: {
+              title: 'Wallet Funding',
+              description: 'Fund wallet balance',
+            },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+
+        if (response.data.status !== 'success') {
+          throw new Error(response.data.message);
+        }
+
+        return {
+          authorizationUrl: response.data.data.link, // ✅ correct
+          reference,
+          payment,
+        };
+      } catch (err: any) {
+        throw new HttpException(
+          `Flutterwave initialization failed: ${err.response?.data?.message || err.message
+          }`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+    }
+
     // Call Paystack API
-    const url = 'https://api.paystack.co/transaction/initialize';
     try {
-      const response = await axios.post<{
-        data: { authorization_url: string };
-      }>(
+      const url = 'https://api.paystack.co/transaction/initialize';
+      const response = await axios.post(
         url,
         {
           email: user?.email, // user email required by Paystack
@@ -68,6 +114,10 @@ export class PaymentService {
         },
       );
 
+      if (!response.data || response.data.status !== true) {
+        throw new Error(response.data?.message || 'Paystack initialization failed');
+      }
+
       return {
         authorizationUrl: response.data?.data?.authorization_url,
         reference,
@@ -75,7 +125,7 @@ export class PaymentService {
       };
     } catch (err) {
       throw new HttpException(
-        'Paystack initialization failed',
+        `Paystack initialization failed: ${err.message} || ${err.response?.data?.message}`,
         HttpStatus.BAD_REQUEST,
       );
     }
