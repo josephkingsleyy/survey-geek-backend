@@ -2,14 +2,15 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import axios from 'axios';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreatePaymentDto, } from './dto/create-payment.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
+
+export const POINT_RATE = 10; // ₦10 = 1 point
 
 @Injectable()
 export class PaymentService {
 
-  private POINT_RATE = 10; // ₦10 = 1 point
 
 
   constructor(
@@ -238,8 +239,8 @@ export class PaymentService {
     });
   }
 
-  async buyPoints(userId: number, points: number) {
-    const cost = points * this.POINT_RATE;
+  async convertWalletToPoints(userId: number, points: number) {
+    const cost = points * POINT_RATE;
 
     return this.prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({
@@ -275,6 +276,53 @@ export class PaymentService {
     });
   }
 
+  async convertPointsToWallet(userId: number, points: number) {
+    const value = points * POINT_RATE;
+
+    return this.prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({
+        where: { userId },
+      });
+
+      if (!wallet) {
+        throw new HttpException('Wallet not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (wallet.points < points) {
+        throw new HttpException(
+          'Insufficient points balance',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Update wallet
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: {
+          points: { decrement: points },
+          balance: { increment: value },
+        },
+      });
+
+      // Log transaction
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'points_redeem',
+          amount: value,
+          points,
+          description: `Converted ${points} points to ₦${value}`,
+        },
+      });
+
+      return {
+        pointsSpent: points,
+        balanceAdded: value,
+      };
+    });
+  }
+
+
   async getWallet(id: number) {
     try {
       const res = await this.prisma.wallet.findUnique({
@@ -291,5 +339,30 @@ export class PaymentService {
       console.log('error', error)
     }
   }
+
+  async getBankList() {
+    try {
+      const response = await axios.get(
+        `https://api.paystack.co/bank/`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          },
+        },
+      );
+
+      const data = response.data;
+
+      if (data.status !== 'success') {
+        throw new HttpException(
+          'bank list not retrieved successfully',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } catch (error) {
+      console.log('error', error)
+    }
+  }
+
 
 }

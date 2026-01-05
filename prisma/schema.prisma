@@ -185,8 +185,9 @@ model User {
   resetOtpExpiresAt DateTime? // OTP expiry
   wallet            Wallet?
 
-  referralsMade Referral[] @relation("UserReferrals")
-  referralUsed  Referral?  @relation("UserReferred")
+  referralsMade Referral[]   @relation("UserReferrals")
+  referralUsed  Referral?    @relation("UserReferred")
+  Withdrawal    Withdrawal[]
 }
 
 enum SurveyStatus {
@@ -352,4 +353,17 @@ enum RewardEvent {
   SURVEY_RESPONSE
   ADMIN_ADJUSTMENT
   POINTS_PURCHASE
+}
+
+model Withdrawal {
+  id            Int    @id @default(autoincrement())
+  userId        Int
+  amount        Float
+  bankName      String
+  accountNumber String
+  accountName   String
+  status        String // 'pending', 'approved', 'declined'
+  approvedBy    Int? // User ID of the approver
+  declinedBy    Int? // User ID of the decliner
+  user          User   @relation(fields: [userId], references: [id])
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, BadRequestException } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { BuyPointsDto, CreatePaymentDto } from './dto/create-payment.dto';
@@ -63,11 +63,26 @@ export class PaymentController {
     @CurrentUser('sub') sub: number,
     @Body() dto: BuyPointsDto,
   ) {
-    return this.paymentService.buyPoints(sub, dto.points);
+    return this.paymentService.convertWalletToPoints(sub, dto.points);
+  }
+
+  @Post('sell-points')
+  sellPoints(
+    @CurrentUser('sub') sub: number,
+    @Body() dto: BuyPointsDto,
+  ) {
+    return this.paymentService.convertPointsToWallet(sub, dto.points);
   }
 
   @Get('my/wallet')
   getWallet(@CurrentUser('sub') sub: number) {
     return this.paymentService.getWallet(sub);
   }
+
+  @Get('bank-list')
+  getBankList() {
+    return this.paymentService.getBankList();
+  }
+
+ 
 }

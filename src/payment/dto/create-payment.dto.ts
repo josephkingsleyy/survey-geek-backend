@@ -17,8 +17,8 @@ export class CreatePaymentDto {
   @IsOptional()
   method?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   reference: string;
 
   @IsString()

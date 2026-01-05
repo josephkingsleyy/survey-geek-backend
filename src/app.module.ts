@@ -19,6 +19,7 @@ import { TicketModule } from './ticket/ticket.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
+import { WithdrawalModule, } from './withdrawal/withdrawal.module';
 
 
 @Module({
@@ -44,6 +45,7 @@ import { ConfigModule } from '@nestjs/config';
       },
     ]),
     CloudinaryModule,
+    WithdrawalModule,
   ],
   controllers: [AppController],
   providers: [AppService,
