@@ -5,6 +5,7 @@ import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { CreatePaymentDto, } from './dto/create-payment.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
+import { Payment } from '@prisma/client';
 
 export const POINT_RATE = 10; // ₦10 = 1 point
 
@@ -80,10 +81,12 @@ export class PaymentService {
           throw new Error(response.data.message);
         }
 
+        
         return {
           authorizationUrl: response.data.data.link, // ✅ correct
           reference,
           payment,
+          data: response.data,
         };
       } catch (err: any) {
         throw new HttpException(
@@ -132,79 +135,30 @@ export class PaymentService {
   }
 
   async verifyPayment(reference: string) {
-    try {
-      const response = await axios.get(
-        `https://api.paystack.co/transaction/verify/${reference}`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          },
-        },
-      );
+    
+    // c2fde19b11ba825ebeff
+    // 9912765
+    const payment = await this.prisma.payment.findUnique({
+      where: { reference },
+    });
 
-      const data = response.data.data;
-
-      if (data.status !== 'success') {
-        throw new HttpException(
-          'Payment not successful',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      // Atomic operation
-      const result = await this.prisma.$transaction(async (tx) => {
-        const payment = await tx.payment.update({
-          where: { reference },
-          data: {
-            status: 'success',
-            paidAt: new Date(data.paid_at),
-            method: data.channel,
-            updatedAt: new Date(),
-          },
-        });
-
-        const wallet =
-          (await tx.wallet.findUnique({
-            where: { userId: payment.userId },
-          })) ||
-          (await tx.wallet.create({
-            data: { userId: payment.userId },
-          }));
-
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: {
-            balance: { increment: payment.amount },
-          },
-        });
-
-        await tx.walletTransaction.create({
-          data: {
-            walletId: wallet.id,
-            type: 'credit',
-            amount: payment.amount,
-            description: 'Wallet funded via Paystack',
-            reference: payment.reference,
-          },
-        });
-
-        return payment;
-      });
-
-      await this.notificationService.create({
-        userId: result.userId,
-        title: 'Payment Successful',
-        message: `Your wallet has been credited with ${result.amount} NGN`,
-        type: 'payment',
-      });
-
-      return result;
-    } catch (error) {
-      throw new HttpException(
-        'Paystack verification failed',
-        HttpStatus.BAD_REQUEST,
-      );
+    if (!payment) {
+      throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
     }
+
+    if (payment.status === 'success') {
+      return payment; // ✅ idempotent
+    }
+
+    if (payment.method === 'paystack') {
+      return this.verifyPaystack(payment);
+    }
+
+    if (payment.method === 'flutterwave') {
+      return this.verifyFlutterwave(payment);
+    }
+
+    throw new HttpException('Unsupported payment provider', HttpStatus.BAD_REQUEST);
   }
 
   // Find all payments
@@ -414,5 +368,110 @@ export class PaymentService {
     }
   }
 
+  private async verifyPaystack(payment: Payment) {
+    const response = await axios.get(
+      `https://api.paystack.co/transaction/verify/${payment.reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      },
+    );
+
+    const data = response.data.data || response.data;
+
+    if (data.status !== 'success') {
+      throw new HttpException('Payment not successful', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.creditWallet({
+      payment,
+      paidAt: new Date(data.paid_at),
+      method: data.channel,
+      description: 'Wallet funded via Paystack',
+    });
+  }
+
+  private async verifyFlutterwave(payment: Payment) {
+    const response = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/${payment.reference}/verify`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+        },
+      },
+    );
+
+    const data = response.data.data || response.data;
+
+    if (data.status !== 'successful') {
+      throw new HttpException('Payment not successful', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.creditWallet({
+      payment,
+      paidAt: new Date(data.created_at),
+      method: data.payment_type,
+      description: 'Wallet funded via Flutterwave',
+    });
+  }
+
+  private async creditWallet({
+    payment,
+    paidAt,
+    method,
+    description,
+  }: {
+    payment: Payment;
+    paidAt: Date;
+    method: string;
+    description: string;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const updatedPayment = await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: 'success',
+          paidAt,
+          method,
+          updatedAt: new Date(),
+        },
+      });
+
+      const wallet =
+        (await tx.wallet.findUnique({
+          where: { userId: payment.userId },
+        })) ||
+        (await tx.wallet.create({
+          data: { userId: payment.userId },
+        }));
+
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: {
+          balance: { increment: payment.amount },
+        },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'credit',
+          amount: payment.amount,
+          reference: payment.reference,
+          description,
+        },
+      });
+
+      await this.notificationService.create({
+        userId: payment.userId,
+        title: 'Payment Successful',
+        message: `Your wallet has been credited with ₦${payment.amount}`,
+        type: 'payment',
+      });
+
+      return updatedPayment;
+    });
+  }
 
 }
