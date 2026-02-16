@@ -129,49 +129,53 @@ model File {
 }
 
 model User {
-  id                        Int              @id @default(autoincrement())
-  email                     String           @unique
-  emailVerifiedAt           DateTime?
-  password                  String?
-  username                  String?
-  phoneNumber               String?
-  alternatePhoneNumber      String?
-  country                   String?
-  state                     String?
-  employmentStatus          String? //enum
-  mostPreferredCommsChannel String? //enum
-  howYouGotToKnowUs         String?
-  profilePhoto              String?
-  dob                       DateTime?
-  gender                    String?
-  location                  String?
-  occupation                String?
-  role                      String?          @default("user")
-  isActive                  Boolean?         @default(false)
-  otp                       String?
-  otpExpiresAt              DateTime?
-  twoFactorAuth             String?
-  lastLogin                 String?
-  ipAddress                 String?
-  browserAgent              String?
-  subscriptionPlan          String?
-  subscriptionPlanExpireAt  String?
-  billingId                 Int?             @unique
-  bio                       String?
-  referralCode              String?
-  softDelete                Boolean?         @default(false)
-  firstName                 String?
-  lastName                  String?
-  countryCode               String?
-  stateCode                 String?
-  subDivisionCode           String?
-  subDivisionName           String?
-  address                   String?
-  hasOnboarded              Boolean?
-  createdAt                 DateTime         @default(now())
-  payment                   Payment[]
-  billing                   Billing?
-  surveyInterest            SurveyInterest[] @relation("UserInterests")
+  id                           Int              @id @default(autoincrement())
+  email                        String           @unique
+  emailVerifiedAt              DateTime?
+  password                     String?
+  username                     String?
+  phoneNumberDialCode          String?
+  phoneNumber                  String?
+  alternatePhoneNumberDialCode String?
+  alternatePhoneNumber         String?
+  countryOfResidence           String?
+  countryOfNationality         String?
+  stateOfNationality           String?
+  stateOfResidence             String?
+  cityOfResidence              String?
+  cityOfNationality            String?
+  addressOfResidence           String?
+  addressOfNationality         String?
+  employmentStatus             String? //enum
+  mostPreferredCommsChannel    String? //enum
+  howYouGotToKnowUs            String?
+  profilePhoto                 String?
+  dob                          DateTime?
+  gender                       String?
+  location                     String?
+  occupation                   String?
+  role                         String?          @default("user")
+  isActive                     Boolean?         @default(false)
+  otp                          String?
+  otpExpiresAt                 DateTime?
+  twoFactorAuth                String?
+  lastLogin                    String?
+  ipAddress                    String?
+  browserAgent                 String?
+  subscriptionPlan             String?
+  subscriptionPlanExpireAt     String?
+  billingId                    Int?             @unique
+  bio                          String?
+  referralCode                 String?
+  softDelete                   Boolean?         @default(false)
+  firstName                    String?
+  lastName                     String?
+  hasOnboarded                 Boolean?
+  createdAt                    DateTime         @default(now())
+  payment                      Payment[]
+  billing                      Billing?
+  ageGroup                     String?
+  surveyInterest               SurveyInterest[] @relation("UserInterests")
 
   createdTickets  Ticket[] @relation("CreatedTickets") // tickets created by the user
   assignedTickets Ticket[] @relation("AssignedTickets") // tickets assigned to the user

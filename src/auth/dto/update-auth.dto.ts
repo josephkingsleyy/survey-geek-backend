@@ -117,6 +117,10 @@ export class UpdateAuthDto {
 
     @IsOptional()
     @IsString()
+    ageGroup?: string;
+
+    @IsOptional()
+    @IsString()
     referralCode?: string;
 
     @IsOptional()
