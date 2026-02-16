@@ -171,9 +171,17 @@ export class AuthService {
 
   async updateAccount(userId: number, updateDto: UpdateAuthDto) {
     try {
+      // Filter out sensitive fields that should not be updated by users
+      const { role, billingId, softDelete, ...safeData } = updateDto;
+
+      // Hash password if provided
+      if (safeData.password) {
+        safeData.password = await bcrypt.hash(safeData.password, 10);
+      }
+
       return await this.prisma.user.update({
         where: { id: userId },
-        data: updateDto,
+        data: safeData,
       });
     } catch (err) {
       throw new InternalServerErrorException(err.message);

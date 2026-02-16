@@ -50,6 +50,7 @@ export class AuthController {
   }
 
   @Patch('update')
+  @UseGuards(JwtAuthGuard)
   async updateAccount(
     @Body() updateDto: UpdateAuthDto,
     @CurrentUser('sub') sub: number,
