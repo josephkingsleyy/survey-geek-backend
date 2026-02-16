@@ -5,7 +5,7 @@ import { IsString, IsEmail, IsOptional, IsBoolean, IsDateString, IsInt, Length, 
 export class UpdateAuthDto {
     @IsOptional()
     @IsEmail()
-    email: string;
+    email?: string;
 
     @IsOptional()
     @IsDateString()
@@ -21,7 +21,15 @@ export class UpdateAuthDto {
 
     @IsOptional()
     @IsString()
+    phoneNumberDialCode?: string;
+
+    @IsOptional()
+    @IsString()
     phoneNumber?: string;
+
+    @IsOptional()
+    @IsString()
+    alternatePhoneNumberDialCode?: string;
 
     @IsOptional()
     @IsString()
@@ -29,11 +37,35 @@ export class UpdateAuthDto {
 
     @IsOptional()
     @IsString()
-    country?: string;
+    countryOfResidence?: string;
 
     @IsOptional()
     @IsString()
-    state?: string;
+    countryOfNationality?: string;
+
+    @IsOptional()
+    @IsString()
+    stateOfNationality?: string;
+
+    @IsOptional()
+    @IsString()
+    stateOfResidence?: string;
+
+    @IsOptional()
+    @IsString()
+    cityOfResidence?: string;
+
+    @IsOptional()
+    @IsString()
+    cityOfNationality?: string;
+
+    @IsOptional()
+    @IsString()
+    addressOfResidence?: string;
+
+    @IsOptional()
+    @IsString()
+    addressOfNationality?: string;
 
     @IsOptional()
     @IsString()
@@ -117,10 +149,6 @@ export class UpdateAuthDto {
 
     @IsOptional()
     @IsString()
-    ageGroup?: string;
-
-    @IsOptional()
-    @IsString()
     referralCode?: string;
 
     @IsOptional()
@@ -136,26 +164,18 @@ export class UpdateAuthDto {
     lastName?: string;
 
     @IsOptional()
-    @IsString()
-    countryCode?: string;
-
-    @IsOptional()
-    @IsString()
-    stateCode?: string;
-
-    @IsOptional()
-    @IsString()
-    subDivisionCode?: string;
-
-    @IsOptional()
-    @IsString()
-    subDivisionName?: string;
-
-    @IsOptional()
-    @IsString()
-    address?: string;
-
-    @IsOptional()
     @IsBoolean()
     hasOnboarded?: boolean;
+
+    @IsOptional()
+    @IsString()
+    ageGroup?: string;
+
+    @IsOptional()
+    @IsString()
+    resetOtp?: string;
+
+    @IsOptional()
+    @IsDateString()
+    resetOtpExpiresAt?: Date;
 }
