@@ -11,6 +11,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAuthDto, LoginAuthDto } from './dto/create-auth.dto';
 import { sendEmail } from 'src/common/utils/mail-service';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 
 @Injectable()
@@ -302,5 +303,34 @@ export class AuthService {
   }
 
 
+  async getAllUsers(pagination: PaginationDto) {
+    const { page = 1, limit = 10 } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        skip,
+        take: limit,
+        where: { softDelete: false },
+        include: {
+          surveyInterest: true,
+          billing: true,
+          createdTickets: true,
+          assignedTickets: true,
+          payment: true,
+        },
+      }),
+      this.prisma.user.count({ where: { softDelete: false } }),
+    ]);
+
+    return {
+      data: users.map(({ password, otp, resetOtp, ...rest }) => rest),
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+      },
+    };
+  }
 
 }

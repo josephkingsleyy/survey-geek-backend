@@ -34,4 +34,18 @@ export class PaginationDto {
   @IsInt()
   @Min(1)
   limit?: number = Limit;
+
+  // Optional filters
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  age?: number;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
 }

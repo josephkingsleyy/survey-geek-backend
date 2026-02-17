@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Res, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from 'src/common/guards/google.guard';
@@ -7,6 +7,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { PaginationDto } from 'src/ticket/dto/update-ticket.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -126,6 +127,15 @@ export class AuthController {
     const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${token}`;
 
     return res.redirect(redirectUrl);
+  }
+
+  @Public()
+  @Get('all-users')
+  async getAllUsers(
+    @Query() pagination: PaginationDto,
+
+  ) {
+    return this.authService.getAllUsers(pagination);
   }
 
   @Public()
