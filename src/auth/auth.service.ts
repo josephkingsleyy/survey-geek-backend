@@ -81,6 +81,9 @@ export class AuthService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { email: dto.email, softDelete: false },
+        include: {
+          surveyInterest: true,
+        },
       });
 
       if (!user) throw new UnauthorizedException('Invalid credentials');

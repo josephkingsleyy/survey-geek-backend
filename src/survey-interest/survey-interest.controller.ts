@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { SurveyInterestService } from './survey-interest.service';
 import { ChooseSurveyInterestsDto, CreateSurveyInterestDto } from './dto/create-survey-interest.dto';
 import { UpdateSurveyInterestDto } from './dto/update-survey-interest.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Controller('survey-interest')
 export class SurveyInterestController {
@@ -21,6 +22,8 @@ export class SurveyInterestController {
     return this.surveyInterestService.findAll();
   }
 
+
+
   @Patch(':id')
   update(
     @Param('id') id: number,
@@ -29,22 +32,23 @@ export class SurveyInterestController {
     return this.surveyInterestService.update(id, dto);
   }
 
-  @Post('choose')
+  @Patch('choose/select')
+  @UseGuards(JwtAuthGuard)
   async chooseInterests(
-    @CurrentUser('sub') sub: number,
+    @CurrentUser('userId') userId: number,
     @Body() dto: ChooseSurveyInterestsDto,
   ) {
     return this.surveyInterestService.chooseMany({
       interestIds: dto.interestIds,
-    }, sub);
+    }, userId);
   }
 
   @Post('create-and-choose')
   async createAndChoose(
-    @CurrentUser('sub') sub: number,
+    @CurrentUser('userId') userId: number,
     @Body() dto: CreateSurveyInterestDto,
   ) {
-    return this.surveyInterestService.createAndChoose(sub, dto);
+    return this.surveyInterestService.createAndChoose(userId, dto);
   }
 
   @Delete(':id')

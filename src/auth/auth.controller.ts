@@ -53,16 +53,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async updateAccount(
     @Body() updateDto: UpdateAuthDto,
-    @CurrentUser('sub') sub: number,
+    @CurrentUser('userId') userId: number,
   ) {
-    return this.authService.updateAccount(sub, updateDto);
+    return this.authService.updateAccount(userId, updateDto);
   }
 
   @Delete('soft')
   async softDeleteAccount(@Param('id') id: string,
-    @CurrentUser('sub') sub: number,
+    @CurrentUser('userId') userId: number,
   ) {
-    return this.authService.softDeleteAccount(sub);
+    return this.authService.softDeleteAccount(userId);
   }
 
   @Delete('undelete/:id')

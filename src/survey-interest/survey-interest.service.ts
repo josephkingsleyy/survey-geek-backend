@@ -23,7 +23,7 @@ export class SurveyInterestService {
     return this.prisma.surveyInterest.findMany();
   }
 
-  async chooseMany(dto: ChooseSurveyInterestsDto, userId: number) {
+  async chooseMany(dto: ChooseSurveyInterestsDto, userId: number) {    
     return this.prisma.user.update({
       where: { id: userId },
       data: {

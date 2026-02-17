@@ -7,9 +7,6 @@ export class CreateSurveyInterestDto {
 
 
 export class ChooseSurveyInterestsDto {
-  // @IsInt()
-  // userId: number;
-
   @IsArray()
   @ArrayNotEmpty()
   @IsInt({ each: true })
