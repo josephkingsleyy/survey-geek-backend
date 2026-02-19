@@ -82,8 +82,45 @@ export class AuthService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { email: dto.email, softDelete: false },
-        include: {
-          surveyInterest: true,
+        select: {
+          id: true,
+          email: true,
+          emailVerifiedAt: true,
+          username: true,
+          phoneNumberDialCode: true,
+          phoneNumber: true,
+          alternatePhoneNumberDialCode: true,
+          alternatePhoneNumber: true,
+          countryOfResidence: true,
+          countryOfNationality: true,
+          stateOfNationality: true,
+          stateOfResidence: true,
+          cityOfResidence: true,
+          cityOfNationality: true,
+          addressOfResidence: true,
+          addressOfNationality: true,
+          employmentStatus: true,
+          mostPreferredCommsChannel: true,
+          howYouGotToKnowUs: true,
+          profilePhoto: true,
+          dob: true,
+          gender: true,
+          location: true,
+          occupation: true,
+          role: true,
+          isActive: true,
+          subscriptionPlan: true,
+          subscriptionPlanExpireAt: true,
+          bio: true,
+          referralCode: true,
+          firstName: true,
+          lastName: true,
+          hasOnboarded: true,
+          ageGroup: true,
+          createdAt: true,
+          ipAddress: true,
+          browserAgent: true,
+          password: true,
         },
       });
 
@@ -118,7 +155,11 @@ export class AuthService {
         throw new InternalServerErrorException('User email or role is missing');
       }
       const token = await this.signToken(user.id, user.email, user.role);
-      return { data: user, accessToken: token };
+
+      return {
+        data: user,
+        accessToken: token,
+      };
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
       throw new InternalServerErrorException(err.message);
@@ -129,19 +170,48 @@ export class AuthService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        include: {
-          billing: true,
-          surveyInterest: true,
-          createdTickets: true,
-          assignedTickets: true,
-          payment: true,
+        select: {
+          id: true,
+          email: true,
+          emailVerifiedAt: true,
+          username: true,
+          phoneNumberDialCode: true,
+          phoneNumber: true,
+          alternatePhoneNumberDialCode: true,
+          alternatePhoneNumber: true,
+          countryOfResidence: true,
+          countryOfNationality: true,
+          stateOfNationality: true,
+          stateOfResidence: true,
+          cityOfResidence: true,
+          cityOfNationality: true,
+          addressOfResidence: true,
+          addressOfNationality: true,
+          employmentStatus: true,
+          mostPreferredCommsChannel: true,
+          howYouGotToKnowUs: true,
+          profilePhoto: true,
+          dob: true,
+          gender: true,
+          location: true,
+          occupation: true,
+          role: true,
+          isActive: true,
+          subscriptionPlan: true,
+          subscriptionPlanExpireAt: true,
+          bio: true,
+          referralCode: true,
+          firstName: true,
+          lastName: true,
+          hasOnboarded: true,
+          ageGroup: true,
+          createdAt: true,
         },
       });
 
       if (!user) throw new UnauthorizedException('User not found');
 
-      const { password, otp, otpExpiresAt, ...safeUser } = user;
-      return { data: safeUser };
+      return { data: user };
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
       throw new InternalServerErrorException(err.message);
@@ -323,19 +393,25 @@ export class AuthService {
         skip,
         take: limit,
         where: { softDelete: false },
-        include: {
-          surveyInterest: true,
-          billing: true,
-          createdTickets: true,
-          assignedTickets: true,
-          payment: true,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          isActive: true,
+          profilePhoto: true,
+          createdAt: true,
+          emailVerifiedAt: true,
+          countryOfResidence: true,
+          ageGroup: true,
         },
       }),
       this.prisma.user.count({ where: { softDelete: false } }),
     ]);
 
     return {
-      data: users.map(({ password, otp, resetOtp, ...rest }) => rest),
+      data: users,
       meta: {
         total,
         page,

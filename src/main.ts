@@ -2,12 +2,14 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import { AuthGuard } from './common/guards/auth.guard';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 
 dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+
   app.enableCors({
     // origin: true,
     origin: process.env.FRONTEND_URL,
@@ -29,8 +31,24 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
 
-  await app.listen(port);
-  // console.log(`Server running on http://localhost:${port}`);
+  const server = await app.listen(port);
+  logger.log(`Server running on http://localhost:${port}`);
 
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    logger.warn('SIGTERM received, shutting down gracefully...');
+    await app.close();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    logger.warn('SIGINT received, shutting down gracefully...');
+    await app.close();
+    process.exit(0);
+  });
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  console.error('Failed to start application:', err);
+  process.exit(1);
+});
