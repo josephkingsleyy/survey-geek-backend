@@ -6,6 +6,7 @@ import { ChangePasswordDto, CreateAuthDto, ForgotPasswordDto, LoginAuthDto, Rese
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { PaginationDto } from 'src/ticket/dto/update-ticket.dto';
 
@@ -57,6 +58,12 @@ export class AuthController {
     @CurrentUser('userId') userId: number,
   ) {
     return this.authService.updateAccount(userId, updateDto);
+  }
+
+  @Patch('update-role')
+  @UseGuards(JwtAuthGuard)
+  async updateRole(@Body() updateRoleDto: UpdateRoleDto) {
+    return this.authService.updateRole(updateRoleDto.userId, updateRoleDto.role);
   }
 
   @Delete('soft')

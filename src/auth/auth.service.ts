@@ -192,6 +192,17 @@ export class AuthService {
     }
   }
 
+  async updateRole(userId: number, role?: string) {
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: { role: role || 'user' },
+      });
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
   async softDeleteAccount(id: number) {
     try {
       return await this.prisma.user.update({

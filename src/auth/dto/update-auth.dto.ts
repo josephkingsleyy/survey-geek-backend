@@ -176,6 +176,10 @@ export class UpdateAuthDto {
     resetOtp?: string;
 
     @IsOptional()
+    @IsInt()
+    id?: number;
+
+    @IsOptional()
     @IsDateString()
     resetOtpExpiresAt?: Date;
 }
