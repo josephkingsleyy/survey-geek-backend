@@ -96,35 +96,14 @@ export class AuthService {
           username: true,
           phoneNumberDialCode: true,
           phoneNumber: true,
-          alternatePhoneNumberDialCode: true,
-          alternatePhoneNumber: true,
-          countryOfResidence: true,
-          countryOfNationality: true,
-          stateOfNationality: true,
-          stateOfResidence: true,
-          cityOfResidence: true,
-          cityOfNationality: true,
-          addressOfResidence: true,
-          addressOfNationality: true,
-          employmentStatus: true,
-          mostPreferredCommsChannel: true,
-          howYouGotToKnowUs: true,
           profilePhoto: true,
-          dob: true,
           gender: true,
-          location: true,
           occupation: true,
           role: true,
           isActive: true,
-          subscriptionPlan: true,
-          subscriptionPlanExpireAt: true,
-          bio: true,
-          referralCode: true,
           firstName: true,
           lastName: true,
           hasOnboarded: true,
-          ageGroup: true,
-          createdAt: true,
           ipAddress: true,
           browserAgent: true,
           password: true,
@@ -165,7 +144,7 @@ export class AuthService {
       const token = await this.signToken(user.id, user.email, user.role);
 
       return {
-        data: user,
+        data: { ...user, password: undefined, id: undefined },
         accessToken: token,
       };
     } catch (err) {
@@ -322,7 +301,8 @@ export class AuthService {
     role: string,
   ): Promise<string> {
     try {
-      return this.jwtService.signAsync({ sub: userId, email, role });
+      // Add lastActivity timestamp
+      return this.jwtService.signAsync({ sub: userId, email, role, lastActivity: Date.now() });
     } catch (err) {
       throw new InternalServerErrorException(err.message);
     }

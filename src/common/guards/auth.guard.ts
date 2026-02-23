@@ -30,11 +30,16 @@ export class AuthGuard implements CanActivate {
 
     try {
       // ✅ Replace 'your_jwt_secret' with your actual secret
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || 'your_jwt_secret',
-      );
-      request.user = decoded; // attach user info to request
+      const payload = jwt.decode(token);
+      jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
+      // Inactivity timeout check
+      const now = Date.now();
+      if (typeof payload === 'object' && payload && 'lastActivity' in payload) {
+        if (payload.lastActivity && now - payload.lastActivity > 15 *60 * 1000) {
+          throw new UnauthorizedException('Session expired due to inactivity');
+        }
+      }
+      request.user = payload; // attach user info to request
       return true;
     } catch (err) {
       throw new UnauthorizedException('Invalid or expired token');
