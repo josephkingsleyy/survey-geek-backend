@@ -18,7 +18,6 @@ import { SurveyInterestModule } from './survey-interest/survey-interest.module';
 import { TicketModule } from './ticket/ticket.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
-import { ConfigModule } from '@nestjs/config';
 import { WithdrawalModule } from './withdrawal/withdrawal.module';
 
 @Module({
