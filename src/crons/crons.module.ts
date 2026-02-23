@@ -9,13 +9,12 @@ import { BillingCronService } from './billing-cron.service';
 
 @Module({
   controllers: [CronsController],
-  providers: [CronsService,
+  providers: [
+    CronsService,
     GeneralCronService,
     PaymentCronService,
     BillingCronService,
   ],
-  imports: [
-    ScheduleModule.forRoot(), PrismaModule
-  ],
+  imports: [ScheduleModule.forRoot(), PrismaModule],
 })
-export class CronsModule { }
+export class CronsModule {}

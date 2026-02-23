@@ -13,22 +13,23 @@ import { sendEmail } from 'src/common/utils/mail-service';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { PaginationDto } from 'src/common/utils/pagination.dto';
 
-
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
-  async signup(dto: CreateAuthDto, data: { ip: string, userAgent: string }) {
+  async signup(dto: CreateAuthDto, data: { ip: string; userAgent: string }) {
     try {
-      const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+      const existing = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
       if (existing) throw new BadRequestException('Email already registered');
 
       const hashed = await bcrypt.hash(dto.password, 10);
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      const otpExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
       const user = await this.prisma.user.create({
         data: {
@@ -50,7 +51,10 @@ export class AuthService {
         text: `Your OTP is: ${otp}`,
       });
 
-      return { message: 'User registered. Please verify email with OTP sent to your inbox.' };
+      return {
+        message:
+          'User registered. Please verify email with OTP sent to your inbox.',
+      };
     } catch (err) {
       throw new InternalServerErrorException(err.message);
     }
@@ -61,9 +65,12 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({ where: { email } });
       if (!user) throw new BadRequestException('User not found');
 
-      if (user.emailVerifiedAt) throw new BadRequestException('Email already verified');
-      if (!user.otp || !user.otpExpiresAt) throw new BadRequestException('No OTP found, please request again');
-      if (user.otpExpiresAt < new Date()) throw new BadRequestException('OTP expired');
+      if (user.emailVerifiedAt)
+        throw new BadRequestException('Email already verified');
+      if (!user.otp || !user.otpExpiresAt)
+        throw new BadRequestException('No OTP found, please request again');
+      if (user.otpExpiresAt < new Date())
+        throw new BadRequestException('OTP expired');
       if (user.otp !== otp) throw new BadRequestException('Invalid OTP');
 
       await this.prisma.user.update({
@@ -78,7 +85,7 @@ export class AuthService {
     }
   }
 
-  async login(dto: LoginAuthDto, data: { ip: string, userAgent: string }) {
+  async login(dto: LoginAuthDto, data: { ip: string; userAgent: string }) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { email: dto.email, softDelete: false },
@@ -126,7 +133,8 @@ export class AuthService {
 
       if (!user) throw new UnauthorizedException('Invalid credentials');
 
-      if (!user.password) throw new UnauthorizedException('Invalid credentials');
+      if (!user.password)
+        throw new UnauthorizedException('Invalid credentials');
       const valid = await bcrypt.compare(dto.password, user.password);
       if (!valid) throw new UnauthorizedException('Invalid credentials');
 
@@ -236,7 +244,11 @@ export class AuthService {
         });
       }
 
-      const token = await this.signToken(user.id, user.email, user.role || 'user');
+      const token = await this.signToken(
+        user.id,
+        user.email,
+        user.role || 'user',
+      );
       return { user, accessToken: token };
     } catch (err) {
       throw new InternalServerErrorException(err.message);
@@ -304,7 +316,11 @@ export class AuthService {
     }
   }
 
-  async signToken(userId: number, email: string, role: string): Promise<string> {
+  async signToken(
+    userId: number,
+    email: string,
+    role: string,
+  ): Promise<string> {
     try {
       return this.jwtService.signAsync({ sub: userId, email, role });
     } catch (err) {
@@ -365,12 +381,16 @@ export class AuthService {
     return { message: 'Password reset successful' };
   }
 
-
-  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+  async changePassword(
+    userId: number,
+    oldPassword: string,
+    newPassword: string,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    if (!user.password) throw new UnauthorizedException('Password not set for this user');
+    if (!user.password)
+      throw new UnauthorizedException('Password not set for this user');
     const valid = await bcrypt.compare(oldPassword, user.password);
     if (!valid) throw new UnauthorizedException('Old password is incorrect');
 
@@ -382,7 +402,6 @@ export class AuthService {
 
     return { message: 'Password changed successfully' };
   }
-
 
   async getAllUsers(pagination: PaginationDto) {
     const { page = 1, limit = 10 } = pagination;
@@ -420,4 +439,61 @@ export class AuthService {
     };
   }
 
+  async sendOtp(email: string) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+      if (!user) throw new NotFoundException('User not found');
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+      await this.prisma.user.update({
+        where: { email },
+        data: { otp, otpExpiresAt },
+      });
+
+      await sendEmail({
+        to: email,
+        subject: 'Your OTP Code',
+        text: `Your OTP is: ${otp}. It expires in 30 minutes.`,
+      });
+
+      return { message: 'OTP sent successfully' };
+    } catch (err) {
+      if (err instanceof NotFoundException) throw err;
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+  async resendOtp(email: string) {
+    // Same as sendOtp, but perhaps add check if OTP already exists or something
+    return this.sendOtp(email);
+  }
+
+  async verifyOtp(email: string, otp: string) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+      if (!user) throw new NotFoundException('User not found');
+
+      if (!user.otp || !user.otpExpiresAt)
+        throw new BadRequestException('No OTP found, please request again');
+      if (user.otpExpiresAt < new Date())
+        throw new BadRequestException('OTP expired');
+      if (user.otp !== otp) throw new BadRequestException('Invalid OTP');
+
+      await this.prisma.user.update({
+        where: { email },
+        data: { otp: null, otpExpiresAt: null },
+      });
+
+      return { message: 'OTP verified successfully' };
+    } catch (err) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof NotFoundException
+      )
+        throw err;
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 }

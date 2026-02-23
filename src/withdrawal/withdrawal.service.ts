@@ -6,11 +6,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class WithdrawalService {
-
   constructor(
     private prisma: PrismaService,
-    private notificationService: NotificationService
-  ) { }
+    private notificationService: NotificationService,
+  ) {}
 
   async create(userId: number, createWithdrawalDto: CreateWithdrawalDto) {
     try {

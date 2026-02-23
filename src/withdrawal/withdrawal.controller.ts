@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  BadRequestException,
+} from '@nestjs/common';
 import { WithdrawalService } from './withdrawal.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
@@ -6,11 +15,13 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 
 @Controller('withdrawal')
 export class WithdrawalController {
-  constructor(private readonly withdrawalService: WithdrawalService) { }
+  constructor(private readonly withdrawalService: WithdrawalService) {}
 
   @Post()
-  create(@Body() createWithdrawalDto: CreateWithdrawalDto,
-    @CurrentUser('sub') sub: number) {
+  create(
+    @Body() createWithdrawalDto: CreateWithdrawalDto,
+    @CurrentUser('sub') sub: number,
+  ) {
     return this.withdrawalService.create(sub, createWithdrawalDto);
   }
 
@@ -25,7 +36,10 @@ export class WithdrawalController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWithdrawalDto: UpdateWithdrawalDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateWithdrawalDto: UpdateWithdrawalDto,
+  ) {
     return this.withdrawalService.update(+id, updateWithdrawalDto);
   }
 
@@ -34,15 +48,12 @@ export class WithdrawalController {
     return this.withdrawalService.remove(+id);
   }
 
-
   @Patch('approve-withdrawal-request/:id')
   handleWithdrawalAction(
     @Param('id') id: string,
     @CurrentUser('sub') sub: number,
     @Body('action') action: 'approve' | 'reject',
-
   ) {
-
     if (action === 'approve') {
       return this.withdrawalService.approveWithdrawal(+id, sub);
     }
@@ -52,7 +63,5 @@ export class WithdrawalController {
     }
 
     throw new BadRequestException('Invalid action');
-
   }
-
 }

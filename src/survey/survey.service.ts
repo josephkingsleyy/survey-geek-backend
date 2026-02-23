@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSurveyDto, UpdateSurveysDto } from './dto/create-survey.dto';
 import { UpdateSectionDto, UpdateSurveyDto } from './dto/update-survey.dto';
@@ -6,12 +12,12 @@ import { NotificationService } from 'src/notification/notification.service';
 import { SurveyStatus, QuestionType } from '@prisma/client';
 import { Limit } from 'src/common/utils/app';
 
-
 @Injectable()
 export class SurveyService {
-  constructor(private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
-  ) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   // async create(createSurveyDto: CreateSurveyDto, userId: number) {
   //   try {
@@ -130,8 +136,8 @@ export class SurveyService {
                 sectionId: section.id,
                 userId: userId,
               },
-            })
-          )
+            }),
+          ),
         );
       }
 
@@ -139,7 +145,8 @@ export class SurveyService {
       if (surveyInterestIds?.length) {
         const users = await this.prisma.user.findMany({
           where: {
-            surveyInterest: { // ✅ ensure matches your User model relation name
+            surveyInterest: {
+              // ✅ ensure matches your User model relation name
               some: { id: { in: surveyInterestIds } },
             },
           },
@@ -169,11 +176,11 @@ export class SurveyService {
       });
     } catch (error) {
       console.error('❌ Failed to create survey:', error);
-      throw new InternalServerErrorException(`Failed to create survey: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to create survey: ${error.message}`,
+      );
     }
   }
-
-
 
   // 🔹 Admin: get all surveys with pagination
   async findAll(page = 1, limit = Limit, date?: string) {
@@ -224,14 +231,21 @@ export class SurveyService {
         skip,
         take: limit,
         include: {
-          sections:
-          {
+          sections: {
             include: {
               questions: true, // ✅ nested inside sections
             },
           },
           responses: true,
-          user: { select: { id: true, email: true, username: true, firstName: true, lastName: true } },
+          user: {
+            select: {
+              id: true,
+              email: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
           surveyInterests: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -284,7 +298,6 @@ export class SurveyService {
     return survey;
   }
 
-
   async update(id: number, updateSurveyDto: UpdateSurveysDto) {
     try {
       const updatedSurvey = await this.prisma.survey.update({
@@ -297,7 +310,6 @@ export class SurveyService {
       throw new Error(`Could not update survey with ID ${id}`);
     }
   }
-
 
   async updateWithQuestionOld(id: number, dto: UpdateSurveyDto) {
     const { sections, surveyInterestIds, ...surveyData } = dto;
@@ -379,7 +391,7 @@ export class SurveyService {
                 data: {
                   sectionId,
                   text: q.text || '',
-                  type: q.type || "TEXT" as any,
+                  type: q.type || ('TEXT' as any),
                   options: q.options ?? [],
                   required: q.required ?? false,
                   scaleMin: q.scaleMin,
@@ -392,7 +404,7 @@ export class SurveyService {
                 where: { id: q.id },
                 data: {
                   text: q.text || '',
-                  type: q.type || "TEXT" as any,
+                  type: q.type || ('TEXT' as any),
                   options: q.options ?? [],
                   required: q.required ?? false,
                   scaleMin: q.scaleMin,
@@ -490,7 +502,7 @@ export class SurveyService {
             const questionData = {
               sectionId,
               text: q.text || '',
-              type: q.type || 'TEXT' as any,
+              type: q.type || ('TEXT' as any),
               options: q.options ?? [],
               required: q.required ?? false,
               scaleMin: q.scaleMin,
@@ -524,9 +536,10 @@ export class SurveyService {
     });
   }
 
-
-
-  async updateSection(surveyId: number, sections: { id: number; order: number }[]) {
+  async updateSection(
+    surveyId: number,
+    sections: { id: number; order: number }[],
+  ) {
     await Promise.all(
       sections.map((s) =>
         this.prisma.section.update({
@@ -601,5 +614,4 @@ export class SurveyService {
       });
     });
   }
-
 }

@@ -8,11 +8,12 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 @Module({
   imports: [PrismaModule],
   controllers: [QuestionController],
-  providers: [QuestionService,
+  providers: [
+    QuestionService,
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
   ],
 })
-export class QuestionModule { }
+export class QuestionModule {}

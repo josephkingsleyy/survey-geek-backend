@@ -7,8 +7,6 @@ import { NotificationModule } from 'src/notification/notification.module';
 @Module({
   controllers: [WithdrawalController],
   providers: [WithdrawalService],
-  imports: [PrismaModule,
-    NotificationModule
-  ],
+  imports: [PrismaModule, NotificationModule],
 })
-export class WithdrawalModule { }
+export class WithdrawalModule {}

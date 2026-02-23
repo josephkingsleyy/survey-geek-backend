@@ -19,7 +19,7 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('responses')
 export class ResponseController {
-  constructor(private readonly responseService: ResponseService) { }
+  constructor(private readonly responseService: ResponseService) {}
 
   // Submit a response to a question
   @Post()
@@ -36,12 +36,16 @@ export class ResponseController {
     return this.responseService.findAll(pagination.page, pagination.limit);
   }
 
-
   @Get('my-responses')
-  async findAllMyResponses(@Query() pagination: PaginationDto,
-    @CurrentUser('sub') sub: number) {
-    return this.responseService.findAllMyResponses(sub, pagination.page,
-      pagination.limit);
+  async findAllMyResponses(
+    @Query() pagination: PaginationDto,
+    @CurrentUser('sub') sub: number,
+  ) {
+    return this.responseService.findAllMyResponses(
+      sub,
+      pagination.page,
+      pagination.limit,
+    );
   }
 
   // Get all responses for a specific question
@@ -67,7 +71,8 @@ export class ResponseController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const response = await this.responseService.findOne(id);
-    if (!response) throw new NotFoundException(`Response with ID ${id} not found`);
+    if (!response)
+      throw new NotFoundException(`Response with ID ${id} not found`);
     return response;
   }
 
@@ -77,16 +82,16 @@ export class ResponseController {
     @Body() updateResponseDto: UpdateResponseDto,
   ) {
     const updated = await this.responseService.update(id, updateResponseDto);
-    if (!updated) throw new NotFoundException(`Response with ID ${id} not found`);
+    if (!updated)
+      throw new NotFoundException(`Response with ID ${id} not found`);
     return updated;
   }
-
 
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     const deleted = await this.responseService.remove(id);
-    if (!deleted) throw new NotFoundException(`Response with ID ${id} not found`);
+    if (!deleted)
+      throw new NotFoundException(`Response with ID ${id} not found`);
     return deleted;
   }
-
 }

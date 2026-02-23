@@ -6,9 +6,10 @@ import { NotificationGateway } from './notification.gateway';
 
 @Injectable()
 export class NotificationService {
-  constructor(private prisma: PrismaService,
+  constructor(
+    private prisma: PrismaService,
     private gateway: NotificationGateway,
-  ) { }
+  ) {}
 
   async create(dto: CreateNotificationDto) {
     try {
@@ -35,10 +36,11 @@ export class NotificationService {
       return {
         data: notifications,
         meta: {
-          total, page, limit
-        }
+          total,
+          page,
+          limit,
+        },
       };
-
     } catch (error) {
       console.error('Error fetching user notifications:', error);
       throw error;
@@ -62,10 +64,11 @@ export class NotificationService {
       return {
         data: notifications,
         meta: {
-          total, page, limit
-        }
+          total,
+          page,
+          limit,
+        },
       };
-
     } catch (error) {
       console.error('Error fetching user notifications:', error);
       throw error;
@@ -79,7 +82,10 @@ export class NotificationService {
     });
   }
 
-  async broadcast(userIds: number[], dto: Omit<CreateNotificationDto, 'userId'>) {
+  async broadcast(
+    userIds: number[],
+    dto: Omit<CreateNotificationDto, 'userId'>,
+  ) {
     try {
       const notifications = userIds.map((id) => ({
         userId: id,
@@ -100,7 +106,6 @@ export class NotificationService {
       console.error('Error broadcasting notifications:', error);
       throw error;
     }
-
   }
 
   async update(id: number, dto: Partial<CreateNotificationDto>) {
@@ -125,5 +130,4 @@ export class NotificationService {
       throw error;
     }
   }
-
 }

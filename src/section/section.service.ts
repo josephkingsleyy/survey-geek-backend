@@ -10,7 +10,7 @@ import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class SectionService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // 🟢 Create a new section
   async create(createSectionDto: CreateSectionDto) {
@@ -75,7 +75,8 @@ export class SectionService {
       },
     });
 
-    if (!section) throw new NotFoundException(`Section with ID ${id} not found`);
+    if (!section)
+      throw new NotFoundException(`Section with ID ${id} not found`);
     return section;
   }
 

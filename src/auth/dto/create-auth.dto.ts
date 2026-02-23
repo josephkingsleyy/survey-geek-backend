@@ -1,4 +1,10 @@
-import { IsEmail, IsOptional, isString, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  isString,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class SignupDto {
   @IsEmail()
@@ -64,4 +70,17 @@ export class ResetPasswordDto {
 export class ChangePasswordDto {
   @IsString() oldPassword: string;
   @IsString() newPassword: string;
+}
+
+export class SendOtpDto {
+  @IsEmail() email: string;
+}
+
+export class ResendOtpDto {
+  @IsEmail() email: string;
+}
+
+export class VerifyOtpDto {
+  @IsEmail() email: string;
+  @IsString() otp: string;
 }

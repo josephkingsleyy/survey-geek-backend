@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import axios from 'axios';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { CreatePaymentDto, } from './dto/create-payment.dto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
 import { Payment } from '@prisma/client';
@@ -11,13 +11,10 @@ export const POINT_RATE = 10; // ₦10 = 1 point
 
 @Injectable()
 export class PaymentService {
-
-
-
   constructor(
     private prisma: PrismaService,
-    private notificationService: NotificationService
-  ) { }
+    private notificationService: NotificationService,
+  ) {}
 
   async create(dto: CreatePaymentDto, userId: number) {
     const user = await this.prisma.user.findUnique({
@@ -26,12 +23,8 @@ export class PaymentService {
     });
 
     if (!user) {
-      throw new HttpException(
-        'User not found',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
     }
-
 
     const reference = `ref_${Date.now()}_${dto.userId}`;
 
@@ -49,7 +42,7 @@ export class PaymentService {
       },
     });
 
-    if (dto.method === "flutterwave") {
+    if (dto.method === 'flutterwave') {
       // Call Flutterwave API
       try {
         const url = 'https://api.flutterwave.com/v3/payments';
@@ -81,7 +74,6 @@ export class PaymentService {
           throw new Error(response.data.message);
         }
 
-        
         return {
           authorizationUrl: response.data.data.link, // ✅ correct
           reference,
@@ -90,12 +82,12 @@ export class PaymentService {
         };
       } catch (err: any) {
         throw new HttpException(
-          `Flutterwave initialization failed: ${err.response?.data?.message || err.message
+          `Flutterwave initialization failed: ${
+            err.response?.data?.message || err.message
           }`,
           HttpStatus.BAD_REQUEST,
         );
       }
-
     }
 
     // Call Paystack API
@@ -118,7 +110,9 @@ export class PaymentService {
       );
 
       if (!response.data || response.data.status !== true) {
-        throw new Error(response.data?.message || 'Paystack initialization failed');
+        throw new Error(
+          response.data?.message || 'Paystack initialization failed',
+        );
       }
 
       return {
@@ -135,7 +129,6 @@ export class PaymentService {
   }
 
   async verifyPayment(reference: string) {
-    
     // c2fde19b11ba825ebeff
     // 9912765
     const payment = await this.prisma.payment.findUnique({
@@ -158,7 +151,10 @@ export class PaymentService {
       return this.verifyFlutterwave(payment);
     }
 
-    throw new HttpException('Unsupported payment provider', HttpStatus.BAD_REQUEST);
+    throw new HttpException(
+      'Unsupported payment provider',
+      HttpStatus.BAD_REQUEST,
+    );
   }
 
   // Find all payments
@@ -218,7 +214,6 @@ export class PaymentService {
       throw error;
     }
   }
-
 
   // Find one by ID
   async findOne(id: number) {
@@ -326,7 +321,6 @@ export class PaymentService {
     });
   }
 
-
   async getWallet(id: number) {
     try {
       const res = await this.prisma.wallet.findUnique({
@@ -338,22 +332,19 @@ export class PaymentService {
           },
         },
       });
-      return { message: "Success", data: res }
+      return { message: 'Success', data: res };
     } catch (error) {
-      console.log('error', error)
+      console.log('error', error);
     }
   }
 
   async getBankList() {
     try {
-      const response = await axios.get(
-        `https://api.paystack.co/bank/`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          },
+      const response = await axios.get(`https://api.paystack.co/bank/`, {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
         },
-      );
+      });
 
       const data = response.data;
 
@@ -364,7 +355,7 @@ export class PaymentService {
         );
       }
     } catch (error) {
-      console.log('error', error)
+      console.log('error', error);
     }
   }
 
@@ -473,5 +464,4 @@ export class PaymentService {
       return updatedPayment;
     });
   }
-
 }

@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { BuyPointsDto, CreatePaymentDto } from './dto/create-payment.dto';
@@ -8,10 +18,11 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   @Post()
-  create(@Body() createPaymentDto: CreatePaymentDto,
+  create(
+    @Body() createPaymentDto: CreatePaymentDto,
     @CurrentUser('sub') sub: number,
   ) {
     return this.paymentService.create(createPaymentDto, sub);
@@ -19,11 +30,8 @@ export class PaymentController {
 
   @Roles('admin')
   @Get()
-  findAll(
-    @Query() pagination: PaginationDto,
-  ) {
-    return this.paymentService.findAll(pagination.page,
-      pagination.limit);
+  findAll(@Query() pagination: PaginationDto) {
+    return this.paymentService.findAll(pagination.page, pagination.limit);
   }
 
   @Get('my-payments')
@@ -31,9 +39,10 @@ export class PaymentController {
     @CurrentUser('sub') sub: number,
     @Query() pagination: PaginationDto,
   ) {
-    return this.paymentService.findMyPayments(sub,
+    return this.paymentService.findMyPayments(
+      sub,
       pagination.page,
-      pagination.limit
+      pagination.limit,
     );
   }
 
@@ -43,8 +52,7 @@ export class PaymentController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string,
-    @Body() updatePaymentDto: UpdatePaymentDto) {
+  update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
     return this.paymentService.update(+id, updatePaymentDto);
   }
 
@@ -59,18 +67,12 @@ export class PaymentController {
   }
 
   @Post('buy-points')
-  buyPoints(
-    @CurrentUser('sub') sub: number,
-    @Body() dto: BuyPointsDto,
-  ) {
+  buyPoints(@CurrentUser('sub') sub: number, @Body() dto: BuyPointsDto) {
     return this.paymentService.convertWalletToPoints(sub, dto.points);
   }
 
   @Post('sell-points')
-  sellPoints(
-    @CurrentUser('sub') sub: number,
-    @Body() dto: BuyPointsDto,
-  ) {
+  sellPoints(@CurrentUser('sub') sub: number, @Body() dto: BuyPointsDto) {
     return this.paymentService.convertPointsToWallet(sub, dto.points);
   }
 
@@ -83,6 +85,4 @@ export class PaymentController {
   getBankList() {
     return this.paymentService.getBankList();
   }
-
- 
 }

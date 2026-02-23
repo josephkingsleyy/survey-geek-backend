@@ -24,16 +24,20 @@ export class NotificationGateway implements OnGatewayInit, OnGatewayDisconnect {
   server: Server;
 
   private readonly logger = new Logger(NotificationGateway.name);
-  private connectedUsers: Map<number, { socketId: string; timestamp: number }> = new Map();
+  private connectedUsers: Map<number, { socketId: string; timestamp: number }> =
+    new Map();
   private readonly CONNECTION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
   private cleanupInterval: NodeJS.Timeout;
 
   afterInit(server: Server) {
     this.logger.log('WebSocket Gateway initialized');
     // Clean up inactive connections every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupInactiveConnections();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupInactiveConnections();
+      },
+      5 * 60 * 1000,
+    );
   }
 
   handleDisconnect(client: Socket) {
@@ -49,7 +53,10 @@ export class NotificationGateway implements OnGatewayInit, OnGatewayDisconnect {
 
   // when user connects, map them with userId
   @SubscribeMessage('register')
-  handleRegister(@MessageBody() userId: number, @ConnectedSocket() client: Socket) {
+  handleRegister(
+    @MessageBody() userId: number,
+    @ConnectedSocket() client: Socket,
+  ) {
     this.connectedUsers.set(userId, {
       socketId: client.id,
       timestamp: Date.now(),

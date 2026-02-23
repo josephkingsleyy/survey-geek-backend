@@ -5,7 +5,6 @@ export class CreateSurveyInterestDto {
   name: string;
 }
 
-
 export class ChooseSurveyInterestsDto {
   @IsArray()
   @ArrayNotEmpty()

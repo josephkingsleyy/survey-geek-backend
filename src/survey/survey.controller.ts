@@ -14,7 +14,11 @@ import {
 } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
-import { ReorderSectionsDto, UpdateSectionDto, UpdateSurveyDto } from './dto/update-survey.dto';
+import {
+  ReorderSectionsDto,
+  UpdateSectionDto,
+  UpdateSurveyDto,
+} from './dto/update-survey.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -24,7 +28,7 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('survey')
 export class SurveyController {
-  constructor(private readonly surveyService: SurveyService) { }
+  constructor(private readonly surveyService: SurveyService) {}
 
   @Post()
   async create(
@@ -49,7 +53,8 @@ export class SurveyController {
       return await this.surveyService.findAll(
         pagination.page,
         pagination.limit,
-        date);
+        date,
+      );
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -101,7 +106,10 @@ export class SurveyController {
     @Body() updateSurveyWithQuestionDto: UpdateSurveyDto,
   ) {
     try {
-      return await this.surveyService.updateWithQuestion(id, updateSurveyWithQuestionDto);
+      return await this.surveyService.updateWithQuestion(
+        id,
+        updateSurveyWithQuestionDto,
+      );
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
     }
@@ -129,10 +137,7 @@ export class SurveyController {
   }
 
   @Patch(':id/publish')
-  publishSurvey(
-    @Param('id') id: string,
-    @CurrentUser('sub') userId: number,
-  ) {
+  publishSurvey(@Param('id') id: string, @CurrentUser('sub') userId: number) {
     return this.surveyService.publishSurvey(+id, userId);
   }
 }

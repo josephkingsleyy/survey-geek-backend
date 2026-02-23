@@ -1,4 +1,12 @@
-import { IsEnum, IsOptional, IsString, IsArray, IsInt, IsBoolean, ValidateNested } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsArray,
+  IsInt,
+  IsBoolean,
+  ValidateNested,
+} from 'class-validator';
 import { QuestionType } from '@prisma/client';
 import { Type } from 'class-transformer';
 
@@ -138,5 +146,4 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsInt()
   order?: number;
-
 }

@@ -7,10 +7,13 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Module({
   controllers: [BillingController],
-  providers: [BillingService, {
-    provide: APP_GUARD,
-    useClass: RolesGuard,
-  },],
+  providers: [
+    BillingService,
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
   imports: [PrismaModule],
 })
 export class BillingModule {}

@@ -7,12 +7,13 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Module({
   controllers: [SectionController],
-  providers: [SectionService,
+  providers: [
+    SectionService,
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
-    }
+    },
   ],
-  imports: [PrismaModule]
+  imports: [PrismaModule],
 })
-export class SectionModule { }
+export class SectionModule {}

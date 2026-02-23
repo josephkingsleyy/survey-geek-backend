@@ -1,15 +1,15 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsNumber, IsString } from 'class-validator';
 
 export class CreateSectionDto {
-    @IsNumber()
-    surveyId: number;
+  @IsNumber()
+  surveyId: number;
 
-    @IsString()
-    title: string;
+  @IsString()
+  title: string;
 
-    @IsString()
-    description?: string;
+  @IsString()
+  description?: string;
 
-    @IsNumber()
-    order?: number;
+  @IsNumber()
+  order?: number;
 }

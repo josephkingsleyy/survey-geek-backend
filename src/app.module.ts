@@ -19,8 +19,7 @@ import { TicketModule } from './ticket/ticket.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
-import { WithdrawalModule, } from './withdrawal/withdrawal.module';
-
+import { WithdrawalModule } from './withdrawal/withdrawal.module';
 
 @Module({
   imports: [
@@ -40,15 +39,16 @@ import { WithdrawalModule, } from './withdrawal/withdrawal.module';
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
-        ttl: 60,        // time-to-live in seconds (1 minute)
-        limit: 10,      // max requests per IP within that minute
+        ttl: 60, // time-to-live in seconds (1 minute)
+        limit: 10, // max requests per IP within that minute
       },
     ]),
     CloudinaryModule,
     WithdrawalModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
@@ -59,4 +59,4 @@ import { WithdrawalModule, } from './withdrawal/withdrawal.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsInt, IsArray, Validate, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsArray,
+  Validate,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class AnswerOptionDto {

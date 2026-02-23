@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
@@ -7,7 +16,7 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('notification')
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) { }
+  constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
   create(@Body() createNotificationDto: CreateNotificationDto) {
@@ -16,10 +25,11 @@ export class NotificationController {
 
   @Roles('admin')
   @Get()
-  findAll(
-    @Query() paginationDto: PaginationDto,
-  ) {
-    return this.notificationService.findAllNotifications(paginationDto.page, paginationDto.limit);
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.notificationService.findAllNotifications(
+      paginationDto.page,
+      paginationDto.limit,
+    );
   }
 
   @Get('my-notifications')
@@ -27,7 +37,11 @@ export class NotificationController {
     @CurrentUser('userId') userId: number,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.notificationService.findUserNotifications(userId, paginationDto.page, paginationDto.limit);
+    return this.notificationService.findUserNotifications(
+      userId,
+      paginationDto.page,
+      paginationDto.limit,
+    );
   }
 
   @Get(':id')
@@ -47,10 +61,14 @@ export class NotificationController {
 
   @Post('broadcast')
   async broadcast(
-    @Body() body: { userIds: number[]; dto: Omit<CreateNotificationDto, 'userId'> },
+    @Body()
+    body: {
+      userIds: number[];
+      dto: Omit<CreateNotificationDto, 'userId'>;
+    },
   ) {
     console.log(body.dto, body.userIds);
-    
+
     return this.notificationService.broadcast(body.userIds, body.dto);
   }
 }

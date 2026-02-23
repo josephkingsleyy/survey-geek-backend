@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpException,
+  HttpStatus,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { PaginationDto, UpdateTicketDto } from './dto/update-ticket.dto';
@@ -10,7 +23,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('ticket')
 export class TicketController {
-  constructor(private readonly ticketService: TicketService) { }
+  constructor(private readonly ticketService: TicketService) {}
 
   @Post()
   async create(
@@ -18,7 +31,7 @@ export class TicketController {
     @CurrentUser('userId') userId: number,
   ) {
     console.log('userId', userId);
-    
+
     try {
       return await this.ticketService.create(createTicketDto, userId);
     } catch (err) {
@@ -30,8 +43,10 @@ export class TicketController {
   @Get()
   async findAll(@Query() pagination: PaginationDto) {
     try {
-      return await this.ticketService.findAll(pagination.page,
-        pagination.limit);
+      return await this.ticketService.findAll(
+        pagination.page,
+        pagination.limit,
+      );
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -81,7 +96,10 @@ export class TicketController {
   }
 
   @Patch(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTicketDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTicketDto,
+  ) {
     try {
       return await this.ticketService.update(+id, dto);
     } catch (err) {

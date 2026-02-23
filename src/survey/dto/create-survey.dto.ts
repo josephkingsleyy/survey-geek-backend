@@ -13,7 +13,6 @@ import { CreateQuestionDto } from 'src/question/dto/create-question.dto';
 import { QuestionType, SurveyStatus } from '@prisma/client';
 import { PartialType } from '@nestjs/mapped-types';
 
-
 export class CreateQuestionAlongDto {
   @IsString()
   text: string;
@@ -87,5 +86,4 @@ export class CreateSurveyDto {
   surveyPurpose?: string;
 }
 
-
-export class UpdateSurveysDto extends PartialType(CreateSurveyDto) { }
+export class UpdateSurveysDto extends PartialType(CreateSurveyDto) {}

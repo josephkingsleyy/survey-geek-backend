@@ -24,7 +24,6 @@ export class CreateTicketDto {
   @IsArray()
   attachments?: { url: string; filename: string }[]; // optional attachments
 
-
   @IsOptional()
   @IsString()
   thumb?: string;
@@ -32,5 +31,4 @@ export class CreateTicketDto {
   @IsOptional()
   @IsString()
   AgentName?: string;
-
 }

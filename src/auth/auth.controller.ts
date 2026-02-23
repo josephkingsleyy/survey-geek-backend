@@ -1,8 +1,30 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Res, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  Res,
+  Query,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from 'src/common/guards/google.guard';
-import { ChangePasswordDto, CreateAuthDto, ForgotPasswordDto, LoginAuthDto, ResetPasswordDto, VerifyEmailDto } from './dto/create-auth.dto';
+import {
+  ChangePasswordDto,
+  CreateAuthDto,
+  ForgotPasswordDto,
+  LoginAuthDto,
+  ResetPasswordDto,
+  SendOtpDto,
+  ResendOtpDto,
+  VerifyEmailDto,
+  VerifyOtpDto,
+} from './dto/create-auth.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -12,12 +34,11 @@ import { PaginationDto } from 'src/ticket/dto/update-ticket.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post('signup')
-  async signup(@Body() signupDto: CreateAuthDto,
-    @Req() req: Request) {
+  async signup(@Body() signupDto: CreateAuthDto, @Req() req: Request) {
     const userAgent = req.headers['user-agent'] || 'unknown';
     const ip =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
@@ -33,9 +54,26 @@ export class AuthController {
   }
 
   @Public()
+  @Post('send-otp')
+  async sendOtp(@Body() body: SendOtpDto) {
+    return this.authService.sendOtp(body.email);
+  }
+
+  @Public()
+  @Post('resend-otp')
+  async resendOtp(@Body() body: ResendOtpDto) {
+    return this.authService.resendOtp(body.email);
+  }
+
+  @Public()
+  @Post('verify-otp')
+  async verifyOtp(@Body() body: VerifyOtpDto) {
+    return this.authService.verifyOtp(body.email, body.otp);
+  }
+
+  @Public()
   @Post('login')
-  async login(@Body() loginDto: LoginAuthDto,
-    @Req() req: Request) {
+  async login(@Body() loginDto: LoginAuthDto, @Req() req: Request) {
     const userAgent = req.headers['user-agent'] || 'unknown';
 
     const ip =
@@ -63,11 +101,15 @@ export class AuthController {
   @Patch('update-role')
   @UseGuards(JwtAuthGuard)
   async updateRole(@Body() updateRoleDto: UpdateRoleDto) {
-    return this.authService.updateRole(updateRoleDto.userId, updateRoleDto.role);
+    return this.authService.updateRole(
+      updateRoleDto.userId,
+      updateRoleDto.role,
+    );
   }
 
   @Delete('soft')
-  async softDeleteAccount(@Param('id') id: string,
+  async softDeleteAccount(
+    @Param('id') id: string,
     @CurrentUser('userId') userId: number,
   ) {
     return this.authService.softDeleteAccount(userId);
@@ -96,13 +138,15 @@ export class AuthController {
     return this.authService.resetPassword(
       resetPasswordDto.email,
       resetPasswordDto.otp,
-      resetPasswordDto.newPassword);
+      resetPasswordDto.newPassword,
+    );
   }
 
   @Post('change-password')
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
-    @CurrentUser('sub') sub: number) {
+    @CurrentUser('sub') sub: number,
+  ) {
     return this.authService.changePassword(
       sub,
       changePasswordDto.oldPassword,
@@ -123,12 +167,18 @@ export class AuthController {
     const result = req.user; // comes from Google strategy validate()
 
     if (!result) {
-      return res.redirect(`${process.env.FRONTEND_URL}/signin?error=oauth_failed`);
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/signin?error=oauth_failed`,
+      );
     }
 
     const token =
       result.accessToken ||
-      (await this.authService.signToken(result.user.id, result.user.email, result.user.role));
+      (await this.authService.signToken(
+        result.user.id,
+        result.user.email,
+        result.user.role,
+      ));
 
     // ✅ Make sure your env variable is spelled correctly
     const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${token}`;
@@ -138,10 +188,7 @@ export class AuthController {
 
   @Public()
   @Get('all-users')
-  async getAllUsers(
-    @Query() pagination: PaginationDto,
-
-  ) {
+  async getAllUsers(@Query() pagination: PaginationDto) {
     return this.authService.getAllUsers(pagination);
   }
 
@@ -150,5 +197,4 @@ export class AuthController {
   getHello(): string {
     return 'Hello World!';
   }
-
 }

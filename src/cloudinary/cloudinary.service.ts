@@ -6,9 +6,7 @@ import { CreateCloudinaryDto } from './dto/create-cloudinary.dto';
 
 @Injectable()
 export class CloudinaryService {
-  constructor(
-    @Inject('Cloudinary') private cloudinary: typeof Cloudinary,
-  ) { }
+  constructor(@Inject('Cloudinary') private cloudinary: typeof Cloudinary) {}
 
   async uploadImage(file: Express.Multer.File): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -29,10 +27,15 @@ export class CloudinaryService {
 
   // ===== Optional resource CRUD stubs =====
 
-  create(createCloudinaryDto: CreateCloudinaryDto) { return 'This action adds a new cloudinary'; }
+  create(createCloudinaryDto: CreateCloudinaryDto) {
+    return 'This action adds a new cloudinary';
+  }
 
   async findAll() {
-    const resources = await this.cloudinary.api.resources({ type: 'upload', prefix: 'survey_geek/' });
+    const resources = await this.cloudinary.api.resources({
+      type: 'upload',
+      prefix: 'survey_geek/',
+    });
     const mappedResources = resources.resources.map((r) => ({
       publicId: r.public_id,
       url: r.secure_url,
@@ -60,7 +63,9 @@ export class CloudinaryService {
     }
   }
 
-  update(id: number, updateCloudinaryDto: UpdateCloudinaryDto) { return `This action updates a #${id} cloudinary`; }
+  update(id: number, updateCloudinaryDto: UpdateCloudinaryDto) {
+    return `This action updates a #${id} cloudinary`;
+  }
 
   async remove(public_id: string): Promise<any> {
     console.log('publ', public_id);

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+  UploadedFile,
+  Query,
+} from '@nestjs/common';
 import { CloudinaryService } from './cloudinary.service';
 import { CreateCloudinaryDto } from './dto/create-cloudinary.dto';
 import { UpdateCloudinaryDto } from './dto/update-cloudinary.dto';
@@ -6,7 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('cloudinary')
 export class CloudinaryController {
-  constructor(private readonly cloudinaryService: CloudinaryService) { }
+  constructor(private readonly cloudinaryService: CloudinaryService) {}
 
   @Post()
   create(@Body() createCloudinaryDto: CreateCloudinaryDto) {
@@ -24,7 +35,10 @@ export class CloudinaryController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCloudinaryDto: UpdateCloudinaryDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCloudinaryDto: UpdateCloudinaryDto,
+  ) {
     return this.cloudinaryService.update(+id, updateCloudinaryDto);
   }
 
@@ -49,7 +63,7 @@ export class CloudinaryController {
     return {
       message: 'File uploaded successfully',
       url: result.secure_url,
-      result: result
+      result: result,
     };
   }
 }

@@ -31,7 +31,11 @@ export class SectionController {
     @Query('limit', ParseIntPipe) limit = Limit,
     @Query('surveyId') surveyId?: string,
   ) {
-    return this.sectionService.findAll(page, limit, surveyId ? +surveyId : undefined);
+    return this.sectionService.findAll(
+      page,
+      limit,
+      surveyId ? +surveyId : undefined,
+    );
   }
 
   // 🔹 Get one section (with nested questions)

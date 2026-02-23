@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, ValidationPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  ValidationPipe,
+  Query,
+} from '@nestjs/common';
 import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
@@ -8,11 +19,13 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('questions')
 export class QuestionController {
-  constructor(private readonly questionService: QuestionService) { }
+  constructor(private readonly questionService: QuestionService) {}
 
   @Post()
-  create(@Body(new ValidationPipe()) createQuestionDto: CreateQuestionDto,
-    @CurrentUser('sub') sub: number) {
+  create(
+    @Body(new ValidationPipe()) createQuestionDto: CreateQuestionDto,
+    @CurrentUser('sub') sub: number,
+  ) {
     return this.questionService.create(createQuestionDto, sub);
   }
 
@@ -20,7 +33,7 @@ export class QuestionController {
   async createMany(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     body: CreateQuestionDto | CreateQuestionDto[],
-    @CurrentUser('sub') sub: number
+    @CurrentUser('sub') sub: number,
   ) {
     if (Array.isArray(body)) {
       return this.questionService.createMany(body, sub); // bulk create
@@ -28,18 +41,22 @@ export class QuestionController {
     return this.questionService.create(body, sub); // single create
   }
 
-  @Roles("admin")
+  @Roles('admin')
   @Get('all-question')
   findAll(@Query() pagination: PaginationDto) {
-    return this.questionService.findAll(pagination.page,
-      pagination.limit);
+    return this.questionService.findAll(pagination.page, pagination.limit);
   }
 
   @Get('my-question')
-  findAllMyQuestion(@Query() pagination: PaginationDto,
-    @CurrentUser('sub') sub: number) {
-    return this.questionService.findAllMyQuestions(sub, pagination.page,
-      pagination.limit);
+  findAllMyQuestion(
+    @Query() pagination: PaginationDto,
+    @CurrentUser('sub') sub: number,
+  ) {
+    return this.questionService.findAllMyQuestions(
+      sub,
+      pagination.page,
+      pagination.limit,
+    );
   }
 
   @Get('')
@@ -58,7 +75,10 @@ export class QuestionController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateQuestionDto: UpdateQuestionDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+  ) {
     return this.questionService.update(+id, updateQuestionDto);
   }
 

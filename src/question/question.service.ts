@@ -6,7 +6,7 @@ import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class QuestionService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // Create a question and link it to a survey
   async create(createQuestionDto: CreateQuestionDto, userId: number) {
@@ -17,14 +17,15 @@ export class QuestionService {
       where: { id: sectionId },
       include: {
         survey: true,
-      }
+      },
     });
 
-    if (!section) throw new NotFoundException(`Section with ID ${sectionId} not found`);
+    if (!section)
+      throw new NotFoundException(`Section with ID ${sectionId} not found`);
 
     return this.prisma.question.create({
       data: {
-        ...rest as any,
+        ...(rest as any),
         section: { connect: { id: sectionId } },
         user: { connect: { id: userId } },
       },
@@ -41,7 +42,8 @@ export class QuestionService {
       const survey = await this.prisma.survey.findUnique({
         where: { id: sectionId },
       });
-      if (!survey) throw new NotFoundException(`Survey with ID ${sectionId} not found`);
+      if (!survey)
+        throw new NotFoundException(`Survey with ID ${sectionId} not found`);
 
       return this.prisma.question.createMany({
         data: (questions as any).map(({ sectionId, ...rest }) => ({
@@ -53,7 +55,6 @@ export class QuestionService {
     } catch (error) {
       throw new Error('Error creating questions: ' + error.message);
     }
-
   }
 
   // Get all questions
@@ -67,11 +68,12 @@ export class QuestionService {
           include: {
             section: {
               include: { survey: true }, // ✅ nested include
-            }, responses: true
+            },
+            responses: true,
           },
           orderBy: { createdAt: 'desc' },
         }),
-        this.prisma.question.count()
+        this.prisma.question.count(),
       ]);
       return {
         data: questions,
@@ -81,10 +83,8 @@ export class QuestionService {
           lastPage: Math.ceil(total / limit),
         },
       };
-
     } catch (error) {
       throw new Error(error.message);
-
     }
   }
 
@@ -106,12 +106,15 @@ export class QuestionService {
           },
           orderBy: { createdAt: 'desc' },
         }),
-        this.prisma.question.count({ where: { userId } })
+        this.prisma.question.count({ where: { userId } }),
       ]);
 
       for (const q of questions) {
         if (q.matrixId) {
-          const matrixIdInt = typeof q.matrixId === 'string' ? parseInt(q.matrixId, 10) : q.matrixId;
+          const matrixIdInt =
+            typeof q.matrixId === 'string'
+              ? parseInt(q.matrixId, 10)
+              : q.matrixId;
 
           const matrix = await this.prisma.matrixField.findUnique({
             where: { id: matrixIdInt },
@@ -130,15 +133,10 @@ export class QuestionService {
           lastPage: Math.ceil(total / limit),
         },
       };
-
     } catch (error) {
       throw new Error(error.message);
-
     }
   }
-
-
-
 
   // Get all questions belonging to a survey
   async findBySurvey(surveyId: number) {
@@ -158,7 +156,6 @@ export class QuestionService {
       },
     });
   }
-
 
   // Get a single question
   async findOne(id: number) {
@@ -222,8 +219,6 @@ export class QuestionService {
     });
   }
 
-
-
   // Delete a question
   async remove(id: number) {
     try {
@@ -232,8 +227,8 @@ export class QuestionService {
       });
       return {
         message: 'Item Deleted successfully',
-        data: res
-      }
+        data: res,
+      };
     } catch {
       throw new NotFoundException(`Question with ID ${id} not found`);
     }

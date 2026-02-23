@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { ChooseSurveyInterestsDto, CreateSurveyInterestDto } from './dto/create-survey-interest.dto';
+import {
+  ChooseSurveyInterestsDto,
+  CreateSurveyInterestDto,
+} from './dto/create-survey-interest.dto';
 import { UpdateSurveyInterestDto } from './dto/update-survey-interest.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class SurveyInterestService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateSurveyInterestDto) {
     try {
@@ -23,7 +26,7 @@ export class SurveyInterestService {
     return this.prisma.surveyInterest.findMany();
   }
 
-  async chooseMany(dto: ChooseSurveyInterestsDto, userId: number) {    
+  async chooseMany(dto: ChooseSurveyInterestsDto, userId: number) {
     return this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -56,7 +59,7 @@ export class SurveyInterestService {
   }
 
   async update(id: number, dto: UpdateSurveyInterestDto) {
-    let interest = await this.prisma.surveyInterest.findUnique({
+    const interest = await this.prisma.surveyInterest.findUnique({
       where: { id },
     });
 

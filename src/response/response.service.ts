@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateResponseDto } from './dto/create-response.dto';
 import { UpdateResponseDto } from './dto/update-response.dto';
@@ -6,7 +10,7 @@ import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class ResponseService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateResponseDto, userId: number) {
     try {
@@ -22,11 +26,17 @@ export class ResponseService {
         },
         update: {
           answerText: dto.answerText,
-          answerOption: dto.answerOption ? JSON.parse(JSON.stringify(dto.answerOption)) : [],
-          answerOptions: dto.answerOptions ? JSON.parse(JSON.stringify(dto.answerOptions)) : [],
+          answerOption: dto.answerOption
+            ? JSON.parse(JSON.stringify(dto.answerOption))
+            : [],
+          answerOptions: dto.answerOptions
+            ? JSON.parse(JSON.stringify(dto.answerOptions))
+            : [],
           rating: dto.rating,
           uploadUrl: dto.uploadUrl,
-          matrixAnswer: dto.matrixAnswer ? JSON.parse(JSON.stringify(dto.matrixAnswer)) : [],
+          matrixAnswer: dto.matrixAnswer
+            ? JSON.parse(JSON.stringify(dto.matrixAnswer))
+            : [],
         },
         create: {
           answerText: dto.answerText,
@@ -41,7 +51,8 @@ export class ResponseService {
         },
       });
 
-      const isNew = response.createdAt.getTime() === response.updatedAt.getTime();
+      const isNew =
+        response.createdAt.getTime() === response.updatedAt.getTime();
       return {
         message: isNew
           ? 'Response submitted successfully.'
@@ -49,7 +60,9 @@ export class ResponseService {
         data: response,
       };
     } catch (error) {
-      throw new InternalServerErrorException('Failed to submit response: ' + error.message);
+      throw new InternalServerErrorException(
+        'Failed to submit response: ' + error.message,
+      );
     }
   }
 
@@ -71,9 +84,8 @@ export class ResponseService {
         data: responses,
         total,
         page,
-        lastPage: Math.ceil(total / limit)
+        lastPage: Math.ceil(total / limit),
       };
-
     } catch (error) {
       throw new Error(`Failed to retrieve responses: ${error.message}`);
     }
@@ -97,9 +109,8 @@ export class ResponseService {
         data: responses,
         total,
         page,
-        lastPage: Math.ceil(total / limit)
+        lastPage: Math.ceil(total / limit),
       };
-
     } catch (error) {
       throw new Error(`Failed to retrieve responses: ${error.message}`);
     }
@@ -169,8 +180,6 @@ export class ResponseService {
     }
   }
 
-
-
   async findOne(id: number) {
     const response = await this.prisma.response.findUnique({
       where: { id },
@@ -208,22 +217,23 @@ export class ResponseService {
       });
 
       return {
-        message: "Response updated successfully.",
+        message: 'Response updated successfully.',
         data: updated,
       };
     } catch (error) {
       throw new InternalServerErrorException(
-        "Failed to update response: " + error.message,
+        'Failed to update response: ' + error.message,
       );
     }
   }
-
 
   async remove(id: number) {
     try {
       return await this.prisma.response.delete({ where: { id } });
     } catch (error) {
-      throw new InternalServerErrorException(`Failed to delete response: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to delete response: ${error.message}`,
+      );
     }
   }
 }

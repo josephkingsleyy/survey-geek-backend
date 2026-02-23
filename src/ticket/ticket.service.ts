@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
@@ -17,31 +21,34 @@ export enum Priority {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
-  URGENT = 'URGENT'
+  URGENT = 'URGENT',
 }
 
 @Injectable()
 export class TicketService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createTicketDto: CreateTicketDto, userId: number) {
-
     try {
       const ticket = await this.prisma.ticket.create({
         data: {
           title: createTicketDto.title,
           description: createTicketDto.description,
-          status: createTicketDto.status ? TicketStatus[createTicketDto.status.toUpperCase()] : TicketStatus.OPEN,
-          priority: createTicketDto.priority ? Priority[createTicketDto.priority.toUpperCase()] : Priority.LOW,
+          status: createTicketDto.status
+            ? TicketStatus[createTicketDto.status.toUpperCase()]
+            : TicketStatus.OPEN,
+          priority: createTicketDto.priority
+            ? Priority[createTicketDto.priority.toUpperCase()]
+            : Priority.LOW,
           category: createTicketDto.category,
           userId: userId,
           attachments: createTicketDto.attachments
             ? {
-              create: createTicketDto.attachments.map((a) => ({
-                url: a.url,
-                filename: a.filename,
-              })),
-            }
+                create: createTicketDto.attachments.map((a) => ({
+                  url: a.url,
+                  filename: a.filename,
+                })),
+              }
             : undefined,
         },
         include: { attachments: true },
@@ -67,7 +74,6 @@ export class TicketService {
       throw new Error(err.message);
     }
   }
-
 
   async findAll(page = 1, limit = Limit) {
     try {
@@ -102,7 +108,7 @@ export class TicketService {
       const tickets = await this.prisma.ticket.findMany({
         where: {
           OR: [
-            { userId },           // tickets created by the user
+            { userId }, // tickets created by the user
             { assignedToId: userId }, // tickets assigned to the user
           ],
         },
@@ -113,20 +119,19 @@ export class TicketService {
       });
       const total = await this.prisma.ticket.count({
         where: {
-          OR: [
-            { userId },
-            { assignedToId: userId },
-          ],
+          OR: [{ userId }, { assignedToId: userId }],
         },
       });
 
       return {
         message: 'User tickets fetched successfully',
-        total, page, limit, data: tickets
+        total,
+        page,
+        limit,
+        data: tickets,
       };
     } catch (error) {
       throw new NotFoundException(error.message);
-
     }
   }
 
@@ -134,14 +139,13 @@ export class TicketService {
     page = 1,
     limit = Limit,
     userId?: number,
-    userName?: string
+    userName?: string,
   ) {
     try {
       const skip = (page - 1) * limit;
 
-
       const whereClause: any = {
-        role: "staff",
+        role: 'staff',
       };
 
       // Filter by userId
@@ -155,25 +159,24 @@ export class TicketService {
           {
             firstName: {
               contains: userName,
-              mode: "insensitive",
+              mode: 'insensitive',
             },
           },
           {
             lastName: {
               contains: userName,
-              mode: "insensitive",
+              mode: 'insensitive',
             },
           },
         ];
       }
-
 
       const [users, total] = await this.prisma.$transaction([
         this.prisma.user.findMany({
           where: whereClause,
           skip,
           take: limit,
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
           include: {
             // optional relations if you need them
             assignedTickets: true,
@@ -185,7 +188,7 @@ export class TicketService {
       ]);
 
       return {
-        message: "Staff list fetched successfully",
+        message: 'Staff list fetched successfully',
         data: users,
         total,
         page,
@@ -196,8 +199,6 @@ export class TicketService {
       throw new NotFoundException(error.message);
     }
   }
-
-
 
   async findOne(id: number) {
     try {
@@ -211,7 +212,6 @@ export class TicketService {
       throw new NotFoundException(err.message);
     }
   }
-
 
   async update(id: number, dto: UpdateTicketDto) {
     try {
@@ -230,11 +230,11 @@ export class TicketService {
 
           attachments: dto.attachments
             ? {
-              create: dto.attachments.map((a) => ({
-                url: a.url,
-                filename: a.filename,
-              })),
-            }
+                create: dto.attachments.map((a) => ({
+                  url: a.url,
+                  filename: a.filename,
+                })),
+              }
             : undefined,
 
           // attachments: dto.attachments?.length
@@ -253,7 +253,6 @@ export class TicketService {
       throw new NotFoundException(err.message);
     }
   }
-
 
   async hardDelete(id: number) {
     try {
@@ -290,7 +289,7 @@ export class TicketService {
 
   async updateToClose(id: number, dto: UpdateTicketDto) {
     try {
-      const ticket = await this.prisma.ticket.update({
+      const ticket = (await this.prisma.ticket.update({
         where: { id },
         data: {
           // spread dto, but exclude attachments since we need special handling
@@ -311,7 +310,7 @@ export class TicketService {
           }),
         },
         include: { user: true },
-      }) as Prisma.TicketGetPayload<{ include: { user: true } }>;
+      })) as Prisma.TicketGetPayload<{ include: { user: true } }>;
 
       if (dto.status && dto.status.toUpperCase() === 'CLOSED') {
         if (ticket.user?.email) {
@@ -328,5 +327,4 @@ export class TicketService {
       throw new NotFoundException(err.message);
     }
   }
-
 }

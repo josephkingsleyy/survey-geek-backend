@@ -6,8 +6,7 @@ import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class BillingService {
-
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateBillingDto) {
     try {
@@ -20,7 +19,6 @@ export class BillingService {
           userId: dto.userId,
         },
       });
-
     } catch (error) {
       console.log('Error creating billing:', error);
       throw error;
@@ -37,7 +35,7 @@ export class BillingService {
           include: { user: { select: { id: true, email: true } } },
           orderBy: { id: 'desc' },
         }),
-        this.prisma.billing.count()
+        this.prisma.billing.count(),
       ]);
       return {
         data: billings,
@@ -51,8 +49,6 @@ export class BillingService {
       console.log('Error fetching billings:', error);
       throw error;
     }
-
-
   }
 
   async findOne(id: number) {
@@ -62,20 +58,21 @@ export class BillingService {
         include: { user: { select: { id: true, email: true } } },
       });
 
-      if (!billing) throw new NotFoundException(`Billing with ID ${id} not found`);
+      if (!billing)
+        throw new NotFoundException(`Billing with ID ${id} not found`);
 
       return billing;
     } catch (error) {
       console.log('Error fetching billing:', error);
       throw error;
     }
-
   }
 
   async update(id: number, dto: UpdateBillingDto) {
     try {
       const billing = await this.prisma.billing.findUnique({ where: { id } });
-      if (!billing) throw new NotFoundException(`Billing with ID ${id} not found`);
+      if (!billing)
+        throw new NotFoundException(`Billing with ID ${id} not found`);
 
       return this.prisma.billing.update({
         where: { id },
@@ -85,20 +82,18 @@ export class BillingService {
       console.log('Error updating billing:', error);
       throw error;
     }
-
   }
 
   async remove(id: number) {
     try {
       const billing = await this.prisma.billing.findUnique({ where: { id } });
-      if (!billing) throw new NotFoundException(`Billing with ID ${id} not found`);
+      if (!billing)
+        throw new NotFoundException(`Billing with ID ${id} not found`);
 
       return this.prisma.billing.delete({ where: { id } });
-
     } catch (error) {
       console.log('Error deleting billing:', error);
       throw error;
     }
   }
-
 }

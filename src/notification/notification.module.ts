@@ -10,4 +10,4 @@ import { NotificationGateway } from './notification.gateway';
   imports: [PrismaModule],
   exports: [NotificationService, NotificationGateway],
 })
-export class NotificationModule { }
+export class NotificationModule {}
