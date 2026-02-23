@@ -1,5 +1,3 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateSurveyDto } from './create-survey.dto';
 import { SurveyStatus } from '@prisma/client';
 import {
   IsArray,

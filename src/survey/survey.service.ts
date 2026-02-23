@@ -7,9 +7,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSurveyDto, UpdateSurveysDto } from './dto/create-survey.dto';
-import { UpdateSectionDto, UpdateSurveyDto } from './dto/update-survey.dto';
+import { UpdateSurveyDto } from './dto/update-survey.dto';
 import { NotificationService } from 'src/notification/notification.service';
-import { SurveyStatus, QuestionType } from '@prisma/client';
 import { Limit } from 'src/common/utils/app';
 
 @Injectable()

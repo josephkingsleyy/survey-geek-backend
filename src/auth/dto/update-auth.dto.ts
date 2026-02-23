@@ -1,5 +1,3 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateAuthDto } from './create-auth.dto';
 import {
   IsString,
   IsEmail,
@@ -7,8 +5,6 @@ import {
   IsBoolean,
   IsDateString,
   IsInt,
-  Length,
-  IsNumberString,
 } from 'class-validator';
 
 export class UpdateAuthDto {

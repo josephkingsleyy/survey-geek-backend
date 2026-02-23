@@ -35,13 +35,7 @@ export class WithdrawalController {
     return this.withdrawalService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateWithdrawalDto: UpdateWithdrawalDto,
-  ) {
-    return this.withdrawalService.update(+id, updateWithdrawalDto);
-  }
+
 
   @Delete(':id')
   remove(@Param('id') id: string) {

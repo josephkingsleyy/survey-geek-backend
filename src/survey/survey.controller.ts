@@ -16,7 +16,6 @@ import { SurveyService } from './survey.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
 import {
   ReorderSectionsDto,
-  UpdateSectionDto,
   UpdateSurveyDto,
 } from './dto/update-survey.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';

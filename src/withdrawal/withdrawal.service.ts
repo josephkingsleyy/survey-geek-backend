@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
-import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -60,7 +59,7 @@ export class WithdrawalService {
     return `This action returns a #${id} withrawal`;
   }
 
-  update(id: number, updateWithdrawalDto: UpdateWithdrawalDto) {
+  update(id: number, ) {
     return `This action updates a #${id} withrawal`;
   }
 

@@ -15,28 +15,5 @@ import { UpdateCronDto } from './dto/update-cron.dto';
 export class CronsController {
   constructor(private readonly cronsService: CronsService) {}
 
-  @Post()
-  create(@Body() createCronDto: CreateCronDto) {
-    return this.cronsService.create(createCronDto);
-  }
 
-  @Get()
-  findAll() {
-    return this.cronsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cronsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCronDto: UpdateCronDto) {
-    return this.cronsService.update(+id, updateCronDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cronsService.remove(+id);
-  }
 }

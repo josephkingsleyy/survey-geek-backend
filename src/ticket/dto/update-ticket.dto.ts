@@ -1,14 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateTicketDto } from './create-ticket.dto';
-import {
-  IsOptional,
-  IsInt,
-  Min,
-  IsString,
-  IsEnum,
-  IsArray,
-  ValidateNested,
-} from 'class-validator';
+import { IsOptional, IsInt, Min, IsString, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TicketPriority, TicketStatus } from '@prisma/client';
 import { Limit } from 'src/common/utils/app';
