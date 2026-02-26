@@ -18,7 +18,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async signup(dto: CreateAuthDto, data: { ip: string; userAgent: string }) {
     try {
@@ -157,6 +157,7 @@ export class AuthService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
+
         select: {
           id: true,
           email: true,
@@ -193,7 +194,11 @@ export class AuthService {
           hasOnboarded: true,
           ageGroup: true,
           createdAt: true,
+
+          surveyInterest: true,
         },
+        
+
       });
 
       if (!user) throw new UnauthorizedException('User not found');

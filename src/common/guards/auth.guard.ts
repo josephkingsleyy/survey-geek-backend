@@ -35,7 +35,7 @@ export class AuthGuard implements CanActivate {
       // Inactivity timeout check
       const now = Date.now();
       if (typeof payload === 'object' && payload && 'lastActivity' in payload) {
-        if (payload.lastActivity && now - payload.lastActivity > 15 * 60 * 1000) {
+        if (payload.lastActivity && now - payload.lastActivity > 30 * 60 * 1000) {
           throw new UnauthorizedException('Session expired due to inactivity');
         }
       }
