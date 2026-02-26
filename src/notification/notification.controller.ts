@@ -23,7 +23,7 @@ export class NotificationController {
     return this.notificationService.create(createNotificationDto);
   }
 
-  @Roles('admin')
+  @Roles('Admin')  
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.notificationService.findAllNotifications(

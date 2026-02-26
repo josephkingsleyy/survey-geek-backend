@@ -23,7 +23,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('ticket')
 export class TicketController {
-  constructor(private readonly ticketService: TicketService) {}
+  constructor(private readonly ticketService: TicketService) { }
 
   @Post()
   async create(
@@ -39,7 +39,7 @@ export class TicketController {
     }
   }
 
-  @Roles('admin')
+  @Roles('Admin')
   @Get()
   async findAll(@Query() pagination: PaginationDto) {
     try {
@@ -124,7 +124,7 @@ export class TicketController {
     return this.ticketService.updateToClose(id, dto);
   }
 
-  @Roles('admin')
+  @Roles('Admin')
   @Patch('assign/:id/:userId')
   async assignTicket(
     @Param('id', ParseIntPipe) ticketId: number,

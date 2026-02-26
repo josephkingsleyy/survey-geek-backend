@@ -19,7 +19,7 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('questions')
 export class QuestionController {
-  constructor(private readonly questionService: QuestionService) {}
+  constructor(private readonly questionService: QuestionService) { }
 
   @Post()
   create(
@@ -41,7 +41,7 @@ export class QuestionController {
     return this.questionService.create(body, sub); // single create
   }
 
-  @Roles('admin')
+  @Roles('Admin')
   @Get('all-question')
   findAll(@Query() pagination: PaginationDto) {
     return this.questionService.findAll(pagination.page, pagination.limit);

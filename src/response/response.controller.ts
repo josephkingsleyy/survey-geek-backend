@@ -19,7 +19,7 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('responses')
 export class ResponseController {
-  constructor(private readonly responseService: ResponseService) {}
+  constructor(private readonly responseService: ResponseService) { }
 
   // Submit a response to a question
   @Post()
@@ -30,7 +30,7 @@ export class ResponseController {
     return this.responseService.create(createResponseDto, sub);
   }
 
-  @Roles('admin')
+  @Roles('Admin')
   @Get()
   async findAll(@Query() pagination: PaginationDto) {
     return this.responseService.findAll(pagination.page, pagination.limit);

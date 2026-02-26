@@ -27,7 +27,7 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('survey')
 export class SurveyController {
-  constructor(private readonly surveyService: SurveyService) {}
+  constructor(private readonly surveyService: SurveyService) { }
 
   @Post()
   async create(
@@ -42,7 +42,7 @@ export class SurveyController {
   }
 
   // 🔹 Admin: get all surveys with pagination
-  @Roles('admin')
+  @Roles('Admin')
   @Get()
   async findAll(
     @Query() pagination: PaginationDto,

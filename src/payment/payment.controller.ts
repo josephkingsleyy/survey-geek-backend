@@ -17,7 +17,7 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(private readonly paymentService: PaymentService) { }
 
   @Post()
   create(
@@ -27,7 +27,7 @@ export class PaymentController {
     return this.paymentService.create(createPaymentDto, sub);
   }
 
-  @Roles('admin')
+  @Roles('Admin')
   @Get()
   findAll(@Query() pagination: PaginationDto) {
     return this.paymentService.findAll(pagination.page, pagination.limit);
