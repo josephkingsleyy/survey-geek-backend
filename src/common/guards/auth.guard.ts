@@ -10,7 +10,7 @@ import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private reflector: Reflector) { }
 
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -35,7 +35,7 @@ export class AuthGuard implements CanActivate {
       // Inactivity timeout check
       const now = Date.now();
       if (typeof payload === 'object' && payload && 'lastActivity' in payload) {
-        if (payload.lastActivity && now - payload.lastActivity > 30 * 60 * 1000) {
+        if (payload.lastActivity && now - payload.lastActivity > 1800 * 60 * 1000) {
           throw new UnauthorizedException('Session expired due to inactivity');
         }
       }
