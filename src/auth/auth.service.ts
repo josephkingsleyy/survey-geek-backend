@@ -197,7 +197,7 @@ export class AuthService {
 
           surveyInterest: true,
         },
-        
+
 
       });
 
@@ -212,7 +212,7 @@ export class AuthService {
 
   async validateOAuthLogin(profile: any) {
     try {
-      const { email, firstName, lastName, profilePhoto } = profile;
+      const { email, firstName, lastName, provider, providerId, image } = profile;
       let user = await this.prisma.user.findUnique({ where: { email } });
 
       if (!user) {
@@ -221,9 +221,25 @@ export class AuthService {
             email,
             firstName,
             lastName,
-            profilePhoto,
+            profilePhoto: image,
+            provider: provider || 'google',
+            providerId: providerId,
             role: 'user',
             emailVerifiedAt: new Date(),
+          },
+        });
+      } else {
+        // Update provider info if not set
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            firstName,
+            lastName,
+            profilePhoto: image,
+            emailVerifiedAt: new Date(),
+            role: user.role || 'user',
+            provider: user.provider || provider || 'google',
+            providerId: user.providerId || providerId,
           },
         });
       }

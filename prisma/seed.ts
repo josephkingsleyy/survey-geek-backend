@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   // 1️⃣ USERS
   const usersData = [
-    { email: 'alice@example.com', username: 'alice', password: 'password123', firstName: 'Alice', lastName: 'Johnson', isActive: true, role: 'user' },
-    { email: 'bob@example.com', username: 'bob', password: 'password123', firstName: 'Bob', lastName: 'Smith', isActive: true, role: 'user' },
-    { email: 'carol@example.com', username: 'carol', password: 'password123', firstName: 'Carol', lastName: 'Davis', isActive: true, role: 'user' },
-    { email: 'dave@example.com', username: 'dave', password: 'password123', firstName: 'Dave', lastName: 'Miller', isActive: false, role: 'user' },
-    { email: 'erin@example.com', username: 'erin', password: 'password123', firstName: 'Erin', lastName: 'Wilson', isActive: true, role: 'admin' },
+    { email: 'alice@example.com', username: 'alice', password: 'password123', firstName: 'Alice', lastName: 'Johnson', isActive: true, role: 'user', provider: 'email' },
+    { email: 'bob@example.com', username: 'bob', password: 'password123', firstName: 'Bob', lastName: 'Smith', isActive: true, role: 'user', provider: 'email' },
+    { email: 'carol@example.com', username: 'carol', password: 'password123', firstName: 'Carol', lastName: 'Davis', isActive: true, role: 'user', provider: 'email' },
+    { email: 'dave@example.com', username: 'dave', password: 'password123', firstName: 'Dave', lastName: 'Miller', isActive: false, role: 'user', provider: 'email' },
+    { email: 'erin@example.com', username: 'erin', password: 'password123', firstName: 'Erin', lastName: 'Wilson', isActive: true, role: 'admin', provider: 'email' },
   ];
 
   const createdUsers: Awaited<ReturnType<typeof prisma.user.create>>[] = [];

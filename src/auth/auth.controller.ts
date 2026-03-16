@@ -34,7 +34,7 @@ import { PaginationDto } from 'src/ticket/dto/update-ticket.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Public()
   @Post('signup')
@@ -53,6 +53,7 @@ export class AuthController {
     return this.authService.verifyEmail(body.email, body.otp);
   }
 
+
   @Public()
   @Post('send-otp')
   async sendOtp(@Body() body: SendOtpDto) {
@@ -69,6 +70,12 @@ export class AuthController {
   @Post('verify-otp')
   async verifyOtp(@Body() body: VerifyOtpDto) {
     return this.authService.verifyOtp(body.email, body.otp);
+  }
+
+  @Public()
+  @Post('social-login')
+  async socialLogin(@Body() body: any) {
+    return this.authService.validateOAuthLogin(body);
   }
 
   @Public()
