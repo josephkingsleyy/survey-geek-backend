@@ -8,7 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class SurveyInterestService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(dto: CreateSurveyInterestDto) {
     try {
