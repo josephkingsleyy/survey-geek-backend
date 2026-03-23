@@ -28,10 +28,10 @@ export class SurveyInterestService {
 
   async chooseMany(dto: ChooseSurveyInterestsDto, userId: number) {
     return this.prisma.user.update({
-      where: { id: userId },
+      where: { id: Number(userId) },
       data: {
         surveyInterest: {
-          connect: dto.interestIds.map((id) => ({ id })),
+          set: dto.interestIds.map((id) => ({ id })),
         },
       },
       include: { surveyInterest: true },
