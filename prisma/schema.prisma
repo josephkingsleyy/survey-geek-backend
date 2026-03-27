@@ -260,6 +260,7 @@ model Survey {
   endDate         DateTime?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+  slug            String?      @unique
 
   sections  Section[]  @relation("SurveySections")
   responses Response[]

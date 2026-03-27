@@ -16,91 +16,22 @@ export class SurveyService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
-  ) {}
-
-  // async create(createSurveyDto: CreateSurveyDto, userId: number) {
-  //   try {
-  //     const { questions, surveyInterestIds, ...surveyData } = createSurveyDto;
-
-  //     const user = await this.prisma.user.findUnique({
-  //       where: { id: userId },
-  //     });
-
-  //     if (!user) {
-  //       throw new NotFoundException('User not found');
-  //     }
-
-  //     // if (!user.isActive) {
-  //     //   throw new ForbiddenException('User is not allowed to create surveys');
-  //     // }
-  //     // 1. Create the survey and link to interests
-  //     const survey = await this.prisma.survey.create({
-  //       data: {
-  //         ...surveyData,
-  //         userId,
-  //         questions: {
-  //           create: questions?.map((q) => ({
-  //             text: q.text,
-  //             type: q.type,
-  //             options: q.options ?? [],
-  //             scaleMin: q.scaleMin,
-  //             scaleMax: q.scaleMax,
-  //             userId: userId,
-  //           })) || [],
-  //         },
-  //         surveyInterests: surveyInterestIds?.length
-  //           ? {
-  //             connect: surveyInterestIds.map((id) => ({ id })),
-  //           }
-  //           : undefined,
-  //       },
-  //       include: {
-  //         surveyInterests: true,
-  //         questions: true,
-  //       },
-  //     });
-
-  //     // 2. Get all users who are subscribed to ANY of the interests
-  //     if (surveyInterestIds?.length) {
-  //       const users = await this.prisma.user.findMany({
-  //         where: {
-  //           surveyInterest: {
-  //             some: { id: { in: surveyInterestIds } },
-  //           },
-  //         },
-  //         select: { id: true },
-  //       });
-
-  //       const userIds = users.map((u) => u.id);
-
-  //       // 3. Send them a notification
-  //       if (userIds.length > 0) {
-  //         await this.notificationService.broadcast(userIds, {
-  //           title: 'New Survey Available',
-  //           message: `A new survey "${survey.title}" was just published in your interest area.`,
-  //           type: 'survey',
-  //         });
-  //       }
-  //     }
-
-  //     return survey;
-  //   } catch (error) {
-  //     throw new Error(`Failed to create survey: ${error.message}`);
-  //   }
-
-  // }
+  ) { }
 
   async create(createSurveyDto: CreateSurveyDto, userId: number) {
     const { questions, surveyInterestIds, ...surveyData } = createSurveyDto;
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const slug = Array.from({ length: 12 }, () => charset.charAt(Math.floor(Math.random() * charset.length))).join('');
 
     try {
       // 1️⃣ Create the survey
       const survey = await this.prisma.survey.create({
         data: {
           ...surveyData,
+          slug: slug,
           userId,
           surveyInterests: surveyInterestIds?.length
             ? { connect: surveyInterestIds.map((id) => ({ id })) }
@@ -261,13 +192,17 @@ export class SurveyService {
   }
 
   // 🔹 Get one survey
-  async findOne(id: number) {
-    const survey = await this.prisma.survey.findUnique({
-      where: { id },
+  async findOne(slug: string) {
+    const survey = await this.prisma.survey.findFirst({
+      where: { slug },
       include: {
         sections: {
           include: {
-            questions: true,
+            questions: {
+              include: {
+                matrix: true,
+              },
+            },
           },
         },
         user: {
@@ -277,21 +212,7 @@ export class SurveyService {
     });
 
     if (!survey) {
-      throw new NotFoundException(`Survey with ID ${id} not found`);
-    }
-
-    // Attach matrix manually if matrixId exists
-    for (const section of survey.sections) {
-      for (const question of section.questions) {
-        if (question.matrixId) {
-          const matrix = await this.prisma.matrixField.findUnique({
-            where: { id: question.matrixId },
-          });
-          if (matrix) {
-            question['matrix'] = matrix;
-          }
-        }
-      }
+      throw new NotFoundException(`Survey with slug ${slug} not found`);
     }
 
     return survey;

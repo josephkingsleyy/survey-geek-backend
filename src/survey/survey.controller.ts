@@ -78,10 +78,10 @@ export class SurveyController {
     }
   }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  @Get(':slug')
+  async findOne(@Param('slug') slug: string) {
     try {
-      return await this.surveyService.findOne(id);
+      return await this.surveyService.findOne(slug);
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.NOT_FOUND);
     }
