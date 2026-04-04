@@ -147,6 +147,15 @@ export class NotificationService {
       data: { read: true },
     });
   }
+  async getNotificationCount(id: number) {
+    const notification = await this.prisma.notification.findUnique({ where: { id } });
+    if (!notification) throw new NotFoundException('Notification not found');
+    await this.prisma.notification.update({
+      where: { id },
+      data: { read: true },
+    });
+    return notification;
+  }
 
   async markAsRead(notificationId: number) {
     return this.prisma.notification.update({

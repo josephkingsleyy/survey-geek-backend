@@ -16,14 +16,14 @@ import { PaginationDto } from 'src/common/utils/pagination.dto';
 
 @Controller('notification')
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationService) { }
 
   @Post()
   create(@Body() createNotificationDto: CreateNotificationDto) {
     return this.notificationService.create(createNotificationDto);
   }
 
-  @Roles('Admin')  
+  @Roles('Admin')
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.notificationService.findAllNotifications(
@@ -42,6 +42,11 @@ export class NotificationController {
       paginationDto.page,
       paginationDto.limit,
     );
+  }
+
+  @Get(':id')
+  getNotifications(@Param('id') id: string) {
+    return this.notificationService.getNotificationCount(+id);
   }
 
   @Patch(':id/read')
