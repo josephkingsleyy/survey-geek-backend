@@ -24,7 +24,7 @@ export class NotificationService {
   async findAllNotifications(page = 1, limit = 20) {
     try {
       const skip = (page - 1) * limit;
-      const [notifications, total, starred, important, survey, response, others] =
+      const [notifications, total, read, starred, important, survey, response, others] =
         await Promise.all([
           this.prisma.notification.findMany({
             orderBy: { createdAt: 'desc' },
@@ -32,6 +32,9 @@ export class NotificationService {
             take: limit,
           }),
           this.prisma.notification.count(),
+          this.prisma.notification.count({
+            where: { read: true },
+          }),
           this.prisma.notification.count({
             where: { isStarred: true },
           }),
@@ -60,6 +63,7 @@ export class NotificationService {
             starred,
             important,
             survey,
+            read,
             responses: response,
             others,
           },
@@ -74,7 +78,7 @@ export class NotificationService {
   async findUserNotifications(userId: number, page = 1, limit = 20) {
     try {
       const skip = (page - 1) * limit;
-      const [notifications, total, starred, important, survey, response, others] =
+      const [notifications, total, read, starred, important, survey, response, others] =
         await Promise.all([
           this.prisma.notification.findMany({
             where: { userId },
@@ -83,6 +87,9 @@ export class NotificationService {
             take: limit,
           }),
           this.prisma.notification.count({ where: { userId } }),
+          this.prisma.notification.count({
+            where: { userId, read: true },
+          }),
           this.prisma.notification.count({
             where: { userId, isStarred: true },
           }),
@@ -112,6 +119,7 @@ export class NotificationService {
             starred,
             important,
             survey,
+            read,
             responses: response,
             others,
           },
