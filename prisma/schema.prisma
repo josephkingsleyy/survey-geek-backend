@@ -371,14 +371,16 @@ enum QuestionType {
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  title     String
-  message   String
-  type      String // e.g., "payment", "survey", "system"
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  message     String
+  type        String // e.g., "payment", "survey", "system"
+  read        Boolean  @default(false)
+  isStarred   Boolean? @default(false)
+  isImportant Boolean? @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model Referral {

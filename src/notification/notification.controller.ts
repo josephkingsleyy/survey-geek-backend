@@ -44,7 +44,7 @@ export class NotificationController {
     );
   }
 
-  @Get(':id')
+  @Patch(':id/read')
   markAsRead(@Param('id') id: string) {
     return this.notificationService.markAsRead(+id);
   }
@@ -52,6 +52,21 @@ export class NotificationController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: Partial<CreateNotificationDto>) {
     return this.notificationService.update(+id, dto);
+  }
+
+  @Patch(':id/toggle-starred')
+  toggleStarred(@Param('id') id: string) {
+    return this.notificationService.toggleStarred(+id);
+  }
+
+  @Patch(':id/toggle-important')
+  toggleImportant(@Param('id') id: string) {
+    return this.notificationService.toggleImportant(+id);
+  }
+
+  @Patch('mark-all-read')
+  markAllRead(@CurrentUser('userId') userId: number) {
+    return this.notificationService.markAllAsRead(userId);
   }
 
   @Delete(':id')

@@ -6,11 +6,15 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateResponseDto } from './dto/create-response.dto';
 import { UpdateResponseDto } from './dto/update-response.dto';
+import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class ResponseService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async create(dto: CreateResponseDto, userId: number) {
     try {
@@ -53,6 +57,23 @@ export class ResponseService {
 
       const isNew =
         response.createdAt.getTime() === response.updatedAt.getTime();
+
+      if (isNew) {
+        const survey = await this.prisma.survey.findUnique({
+          where: { id: dto.surveyId },
+          select: { userId: true, title: true },
+        });
+
+        if (survey) {
+          await this.notificationService.create({
+            userId: survey.userId,
+            title: 'New Response Received',
+            message: `A new response has been submitted for your survey "${survey.title}".`,
+            type: 'response',
+          });
+        }
+      }
+
       return {
         message: isNew
           ? 'Response submitted successfully.'
