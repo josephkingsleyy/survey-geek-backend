@@ -6,15 +6,20 @@ import { Limit } from 'src/common/utils/app';
 
 @Injectable()
 export class SectionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // 🟢 Create a new section
   async create(createSectionDto: CreateSectionDto) {
-    const { surveyId, title, description, order } = createSectionDto;
+    const { surveyId, title, description, order, slug } = createSectionDto;
 
     // Ensure survey exists
-    const survey = await this.prisma.survey.findUnique({
-      where: { id: surveyId },
+    const survey = await this.prisma.survey.findFirst({
+      where: {
+        OR: [
+          { id: surveyId },
+          { slug: slug },
+        ],
+      },
     });
     if (!survey) throw new NotFoundException('Survey not found');
 
@@ -23,7 +28,7 @@ export class SectionService {
         title,
         description,
         order,
-        surveyId,
+        surveyId: survey.id,
       },
       include: { survey: true },
     });

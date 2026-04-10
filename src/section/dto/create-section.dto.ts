@@ -1,6 +1,7 @@
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateSectionDto {
+  @IsOptional()
   @IsNumber()
   surveyId: number;
 
@@ -12,4 +13,8 @@ export class CreateSectionDto {
 
   @IsNumber()
   order?: number;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
 }
