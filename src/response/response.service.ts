@@ -14,13 +14,22 @@ export class ResponseService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
   async create(dto: CreateResponseDto, userId: number) {
     try {
       const normalize = (value: any) =>
         value ? JSON.parse(JSON.stringify(value)) : [];
 
+      const surveyConnect = dto.surveyId
+        ? { id: dto.surveyId }
+        : dto.slug
+          ? { slug: dto.slug }
+          : null;
+
+      if (!surveyConnect) {
+        throw new Error('Either surveyId or slug must be provided');
+      }
       const response = await this.prisma.response.upsert({
         where: {
           userId_questionId: {
@@ -42,6 +51,7 @@ export class ResponseService {
             ? JSON.parse(JSON.stringify(dto.matrixAnswer))
             : [],
         },
+
         create: {
           answerText: dto.answerText,
           answerOption: normalize(dto.answerOption),
@@ -50,7 +60,7 @@ export class ResponseService {
           uploadUrl: dto.uploadUrl,
           matrixAnswer: normalize(dto.matrixAnswer),
           user: { connect: { id: userId } },
-          survey: { connect: { id: dto.surveyId } },
+          survey: { connect: surveyConnect },
           question: { connect: { id: dto.questionId } },
         },
       });
@@ -59,8 +69,13 @@ export class ResponseService {
         response.createdAt.getTime() === response.updatedAt.getTime();
 
       if (isNew) {
-        const survey = await this.prisma.survey.findUnique({
-          where: { id: dto.surveyId },
+        const survey = await this.prisma.survey.findFirst({
+          where: {
+            OR: [
+              { id: dto.surveyId },
+              { slug: dto.slug }
+            ]
+          },
           select: { userId: true, title: true },
         });
 

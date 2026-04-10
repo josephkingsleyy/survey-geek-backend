@@ -89,7 +89,7 @@ export class SurveyController {
 
   @Patch(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateSurveyDto: UpdateSurveyDto,
   ) {
     try {

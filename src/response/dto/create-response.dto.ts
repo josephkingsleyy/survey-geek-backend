@@ -23,6 +23,7 @@ class MatrixAnswerDto {
 }
 
 export class CreateResponseDto {
+  @IsOptional()
   @IsInt()
   userId: number;
 
@@ -54,8 +55,13 @@ export class CreateResponseDto {
   @IsString()
   uploadUrl?: string; // for uploads
 
+  @IsOptional()
   @IsInt()
   surveyId?: number;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
 
   @IsOptional()
   @IsArray()

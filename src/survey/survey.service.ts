@@ -218,10 +218,10 @@ export class SurveyService {
     return survey;
   }
 
-  async update(id: number, updateSurveyDto: UpdateSurveysDto) {
+  async update(id: string, updateSurveyDto: UpdateSurveysDto) {
     try {
       const updatedSurvey = await this.prisma.survey.update({
-        where: { id },
+        where: isNaN(Number(id)) ? { slug: id } : { id: Number(id) },
         data: updateSurveyDto,
       });
       return updatedSurvey;
