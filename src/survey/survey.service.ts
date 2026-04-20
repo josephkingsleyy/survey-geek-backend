@@ -10,6 +10,7 @@ import { CreateSurveyDto, UpdateSurveysDto } from './dto/create-survey.dto';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
+import { sendEmail } from 'src/common/utils/mail-service';
 
 @Injectable()
 export class SurveyService {
@@ -223,7 +224,29 @@ export class SurveyService {
       const updatedSurvey = await this.prisma.survey.update({
         where: isNaN(Number(id)) ? { slug: id } : { id: Number(id) },
         data: updateSurveyDto,
+        include: {
+          user: true,
+        }
       });
+      if (updateSurveyDto.status === "PUBLISHED") {
+        if (updatedSurvey?.user?.email) {
+          await sendEmail({
+            to: updatedSurvey.user.email,
+            subject: 'Survey Published',
+            text: `Your survey "${updatedSurvey.title}" has been approved and published.`,
+          });
+        }
+        const users = await this.prisma.user.findMany({
+          select: { id: true },
+        });
+        const userIds = users.map((u) => u.id);
+
+        await this.notificationService.broadcast(userIds, {
+          title: 'New Survey Available',
+          message: `A new survey "${updatedSurvey.title}" was just published.`,
+          type: 'survey',
+        });
+      };
       return updatedSurvey;
     } catch (error) {
       console.error(`Failed to update survey with ID ${id}:`, error);
