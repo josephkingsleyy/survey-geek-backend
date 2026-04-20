@@ -52,10 +52,6 @@ import { WithdrawalModule } from './withdrawal/withdrawal.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
   ],
 })
 export class AppModule {}

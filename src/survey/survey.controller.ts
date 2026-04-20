@@ -19,12 +19,12 @@ import {
   UpdateSurveyDto,
 } from './dto/update-survey.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { PaginationDto } from 'src/common/utils/pagination.dto';
 
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('survey')
 export class SurveyController {
   constructor(private readonly surveyService: SurveyService) { }
@@ -46,8 +46,10 @@ export class SurveyController {
   @Get()
   async findAll(
     @Query() pagination: PaginationDto,
+    @CurrentUser() user: any,
     @Query('date') date?: string,
   ) {
+    // console.log('User accessing findAll:', user);
     try {
       return await this.surveyService.findAll(
         pagination.page,

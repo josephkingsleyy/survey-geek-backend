@@ -14,7 +14,11 @@ import { BuyPointsDto, CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { PaginationDto } from 'src/common/utils/pagination.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) { }

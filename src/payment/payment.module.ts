@@ -8,13 +8,7 @@ import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
   controllers: [PaymentController],
-  providers: [
-    PaymentService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-  ],
+  providers: [PaymentService],
   imports: [PrismaModule, NotificationModule],
 })
 export class PaymentModule {}

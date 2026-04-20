@@ -8,12 +8,6 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 @Module({
   controllers: [SurveyInterestController],
   imports: [PrismaModule],
-  providers: [
-    SurveyInterestService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-  ],
+  providers: [SurveyInterestService],
 })
 export class SurveyInterestModule {}

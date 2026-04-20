@@ -7,13 +7,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Module({
   controllers: [TicketController],
-  providers: [
-    TicketService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-  ],
+  providers: [TicketService],
   imports: [PrismaModule],
 })
 export class TicketModule {}

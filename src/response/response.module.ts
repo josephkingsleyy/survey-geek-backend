@@ -10,12 +10,6 @@ import { NotificationModule } from 'src/notification/notification.module';
 @Module({
   imports: [PrismaModule, NotificationModule],
   controllers: [ResponseController],
-  providers: [
-    ResponseService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-  ],
+  providers: [ResponseService],
 })
 export class ResponseModule {}

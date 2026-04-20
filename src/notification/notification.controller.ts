@@ -13,7 +13,11 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { PaginationDto } from 'src/common/utils/pagination.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('notification')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) { }

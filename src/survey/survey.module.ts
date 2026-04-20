@@ -8,13 +8,7 @@ import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
   controllers: [SurveyController],
-  providers: [
-    SurveyService,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-  ],
+  providers: [SurveyService],
   imports: [PrismaModule, NotificationModule],
 })
 export class SurveyModule {}

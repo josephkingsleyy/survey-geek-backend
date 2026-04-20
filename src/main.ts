@@ -1,7 +1,6 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
-import { AuthGuard } from './common/guards/auth.guard';
 import { ValidationPipe, Logger } from '@nestjs/common';
 
 dotenv.config();
@@ -17,8 +16,6 @@ async function bootstrap() {
     allowedHeaders: '*',
     credentials: true,
   });
-
-  app.useGlobalGuards(new AuthGuard(new Reflector()));
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
