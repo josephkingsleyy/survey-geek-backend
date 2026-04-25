@@ -247,6 +247,37 @@ export class SurveyService {
           type: 'survey',
         });
       };
+
+      if (updateSurveyDto.status === "PENDING") {
+        const admins = await this.prisma.user.findMany({
+          where: { role: 'Admin' },
+          select: { id: true, email: true },
+        });
+
+        const adminIds = admins.map((a) => a.id);
+
+        // 🔔 Send in-app notification
+        if (adminIds.length) {
+          await this.notificationService.broadcast(adminIds, {
+            title: 'Survey Pending Approval',
+            message: `A survey "${updatedSurvey.title}" is awaiting approval.`,
+            type: 'survey',
+          });
+        }
+
+        // 📧 Send email to admins
+        await Promise.all(
+          admins
+            .filter((a) => a.email)
+            .map((admin) =>
+              sendEmail({
+                to: admin.email!,
+                subject: 'Survey Pending Approval',
+                text: `A survey "${updatedSurvey.title}" has been submitted and is awaiting your approval.`,
+              })
+            )
+        );
+      }
       return updatedSurvey;
     } catch (error) {
       console.error(`Failed to update survey with ID ${id}:`, error);
