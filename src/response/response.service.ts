@@ -18,8 +18,10 @@ export class ResponseService {
 
   async create(dto: CreateResponseDto, userId: number) {
     try {
-      const normalize = (value: any) =>
-        value ? JSON.parse(JSON.stringify(value)) : [];
+      const normalizeJson = (value: any) =>
+        value !== undefined && value !== null
+          ? JSON.parse(JSON.stringify(value))
+          : null;
 
       const surveyConnect = dto.surveyId
         ? { id: dto.surveyId }
@@ -38,27 +40,27 @@ export class ResponseService {
           },
         },
         update: {
-          answerText: dto.answerText,
+          answerText: dto.answerText ?? undefined,
           answerOption: dto.answerOption
-            ? JSON.parse(JSON.stringify(dto.answerOption))
-            : [],
+            ? normalizeJson(dto.answerOption)
+            : undefined,
           answerOptions: dto.answerOptions
-            ? JSON.parse(JSON.stringify(dto.answerOptions))
-            : [],
-          rating: dto.rating,
-          uploadUrl: dto.uploadUrl,
-          matrixAnswer: dto.matrixAnswer
-            ? JSON.parse(JSON.stringify(dto.matrixAnswer))
-            : [],
+            ? normalizeJson(dto.answerOptions)
+            : undefined,
+          rating: dto.rating ?? undefined,
+          uploadUrl: dto.uploadUrl ?? undefined,
+          matrixAnswer: dto.matrixAnswer !== undefined && dto.matrixAnswer !== null
+            ? normalizeJson(dto.matrixAnswer)
+            : undefined,
         },
 
         create: {
           answerText: dto.answerText,
-          answerOption: normalize(dto.answerOption),
-          answerOptions: normalize(dto.answerOptions),
+          answerOption: normalizeJson(dto.answerOption) ?? [],
+          answerOptions: normalizeJson(dto.answerOptions) ?? [],
           rating: dto.rating,
           uploadUrl: dto.uploadUrl,
-          matrixAnswer: normalize(dto.matrixAnswer),
+          matrixAnswer: normalizeJson(dto.matrixAnswer),
           user: { connect: { id: userId } },
           survey: { connect: surveyConnect },
           question: { connect: { id: dto.questionId } },

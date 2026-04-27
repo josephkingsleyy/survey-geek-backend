@@ -49,20 +49,24 @@ class MatrixFieldDto {
   @IsInt()
   id?: number;
 
+  @IsOptional()
   @IsString()
-  operator: string; // "add" | "subtract" | "multiply" | "divide"
+  operator?: string; // "add" | "subtract" | "multiply" | "divide"
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  rows: string[];
+  rows?: string[];
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  cols: string[];
+  cols?: string[];
 
+  @IsOptional()
   @IsArray()
   @IsArray({ each: true })
-  data: string[][]; // e.g., [["1","2"],["3","4"]]
+  data?: string[][]; // e.g., [["1","2"],["3","4"]] — computed client-side
 }
 
 export enum QuestionStatusDto {

@@ -192,11 +192,18 @@ export class QuestionService {
     // If no matrix sent → return
     if (!matrix) return question;
 
+    // Build safe matrix payload — 'data' defaults to [] if not provided
+    const { data: matrixData, ...matrixRest } = matrix as any;
+    const safeMatrixPayload = {
+      ...matrixRest,
+      data: matrixData ?? [],
+    };
+
     // CASE 1 — Matrix exists → update it
     if (question.matrix) {
       await this.prisma.matrixField.update({
         where: { id: question.matrix.id },
-        data: matrix,
+        data: safeMatrixPayload,
       });
 
       return this.prisma.question.findUnique({
@@ -206,9 +213,9 @@ export class QuestionService {
     }
 
     // CASE 2 — No matrix exists → create one
-    const createdMatrix = await this.prisma.matrixField.create({
+    await this.prisma.matrixField.create({
       data: {
-        ...matrix,
+        ...safeMatrixPayload,
         question: { connect: { id } },
       },
     });

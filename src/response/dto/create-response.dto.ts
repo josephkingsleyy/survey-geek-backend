@@ -64,8 +64,5 @@ export class CreateResponseDto {
   slug?: string;
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => MatrixAnswerDto)
-  matrixAnswer?: MatrixAnswerDto[]; // for MATRIX type questions
+  matrixAnswer?: any; // for MATRIX type questions (can be array or object)
 }
