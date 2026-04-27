@@ -49,6 +49,7 @@ export class SurveyService {
           title: `Section 1 for ${survey.title}`,
           description: 'Default section created with survey',
           surveyId: survey.id,
+          order: 1,
         },
       });
 
@@ -198,6 +199,7 @@ export class SurveyService {
       where: { slug },
       include: {
         sections: {
+          orderBy: { order: 'asc' },
           include: {
             questions: {
               include: {
