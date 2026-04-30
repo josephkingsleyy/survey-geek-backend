@@ -89,6 +89,15 @@ export class SurveyController {
     }
   }
 
+  @Get('details/:slug')
+  async getSurveyDetails(@Param('slug') slug: string) {
+    try {
+      return await this.surveyService.getSurveyDetails(slug);
+    } catch (err) {
+      throw new HttpException(err.message, HttpStatus.NOT_FOUND);
+    }
+  }
+
   @Patch(':id')
   async update(
     @Param('id') id: string,

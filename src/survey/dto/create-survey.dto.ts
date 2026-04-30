@@ -85,4 +85,4 @@ export class CreateSurveyDto {
   surveyPurpose?: string;
 }
 
-export class UpdateSurveysDto extends PartialType(CreateSurveyDto) {}
+

@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateSurveyDto, UpdateSurveysDto } from './dto/create-survey.dto';
+import { CreateSurveyDto } from './dto/create-survey.dto';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
@@ -221,11 +221,154 @@ export class SurveyService {
     return survey;
   }
 
-  async update(id: string, updateSurveyDto: UpdateSurveysDto) {
+  // 🔹 Get full survey details for dashboard
+  async getSurveyDetails(slug: string) {
+    const survey = await this.prisma.survey.findUnique({
+      where: { slug },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePhoto: true,
+            email: true,
+          },
+        },
+        surveyInterests: {
+          select: { id: true, name: true },
+        },
+        sections: {
+          orderBy: { order: 'asc' },
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+              include: {
+                matrix: true,
+              },
+            },
+          },
+        },
+        responses: {
+          include: {
+            user: {
+              select: { id: true, firstName: true, lastName: true, profilePhoto: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!survey) {
+      throw new NotFoundException(`Survey with slug ${slug} not found`);
+    }
+
+    const totalQuestions = survey.sections.reduce(
+      (acc, section) => acc + section.questions.length,
+      0,
+    );
+
+    const respondentsMap = new Map();
+    survey.responses.forEach((resp) => {
+      if (!respondentsMap.has(resp.userId)) {
+        respondentsMap.set(resp.userId, {
+          userId: resp.userId,
+          name: `${resp.user?.firstName || ''} ${resp.user?.lastName || ''}`.trim() || 'Anonymous',
+          profilePhoto: resp.user?.profilePhoto,
+          responseCount: 0,
+          lastResponseDate: resp.updatedAt,
+        });
+      }
+      respondentsMap.get(resp.userId).responseCount++;
+      if (resp.updatedAt > respondentsMap.get(resp.userId).lastResponseDate) {
+        respondentsMap.get(resp.userId).lastResponseDate = resp.updatedAt;
+      }
+    });
+
+    const respondents = Array.from(respondentsMap.values()).map((r, index) => ({
+      sn: index + 1,
+      name: r.name,
+      progress: totalQuestions > 0 ? Math.min(100, Math.round((r.responseCount / totalQuestions) * 100)) : 0,
+      profilePhoto: r.profilePhoto,
+      lastActive: r.lastResponseDate,
+    }));
+
+    const otherSurveys = await this.prisma.survey.findMany({
+      where: {
+        userId: survey.userId,
+        id: { not: survey.id },
+      },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    const attachments = survey.responses
+      .filter(r => r.uploadUrl)
+      .map(r => ({
+        id: r.id,
+        url: r.uploadUrl,
+        name: r?.uploadUrl?.split('/').pop(),
+        uploadedBy: `${r?.user?.firstName || ''} ${r?.user?.lastName || ''}`.trim(),
+        date: r.createdAt
+      }));
+
+    const activities: any = [];
+
+    // Created activity
+    activities.push({
+      title: survey.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      subtitle: `Created on ${survey.createdAt.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}`,
+      textcolor: 'primary',
+      boldtext: false,
+      line: true,
+    });
+
+    if (survey.status === 'PUBLISHED') {
+      activities.push({
+        title: survey.updatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        subtitle: `Approved and published on ${survey.updatedAt.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}`,
+        textcolor: 'warning',
+        boldtext: true,
+        line: true,
+      });
+    }
+
+    if (respondents.length > 0) {
+      activities.push({
+        title: 'Recent',
+        subtitle: `${respondents.length}/${survey.minResponse || 100} responses received`,
+        textcolor: 'secondary',
+        boldtext: true,
+        line: false,
+      });
+    }
+
+    return {
+      ...survey,
+      stats: {
+        totalResponses: respondents.length,
+        attachmentsCount: attachments.length,
+        completionRate: respondents.length > 0 ? Math.round(respondents.reduce((acc, r) => acc + r.progress, 0) / respondents.length) : 0,
+      },
+      respondents,
+      attachments,
+      otherSurveys,
+      activities,
+    };
+  }
+
+  async update(id: string, updateSurveyDto: UpdateSurveyDto) {
+    const { sections, ...surveyData } = updateSurveyDto;
     try {
       const updatedSurvey = await this.prisma.survey.update({
         where: isNaN(Number(id)) ? { slug: id } : { id: Number(id) },
-        data: updateSurveyDto,
+        data: surveyData as any,
         include: {
           user: true,
         }
