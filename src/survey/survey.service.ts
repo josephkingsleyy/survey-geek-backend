@@ -117,13 +117,70 @@ export class SurveyService {
   }
 
   // 🔹 Admin: get all surveys with pagination
-  async findAll(page = 1, limit = Limit, date?: string) {
+  async findAll(
+    page = 1,
+    limit = Limit,
+    filters: {
+      date?: string;
+      status?: string;
+      search?: string;
+      category?: string;
+      published?: any;
+      completed?: any;
+      trashed?: any;
+      pending?: any;
+      draft?: any;
+    } = {},
+  ) {
     const skip = (page - 1) * limit;
+    const {
+      date,
+      status,
+      search,
+      category,
+      published,
+      completed,
+      trashed,
+      pending,
+      draft,
+    } = filters;
 
-    const whereClause: any = {};
+    const baseWhere: any = {};
+
     if (date) {
-      whereClause.createdAt = { gte: new Date(date) };
+      baseWhere.createdAt = { gte: new Date(date) };
     }
+
+    if (search) {
+      baseWhere.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (category) {
+      baseWhere.surveyInterests = {
+        some: {
+          name: { contains: category, mode: 'insensitive' },
+        },
+      };
+    }
+
+    const whereClause = { ...baseWhere };
+
+    if (status) {
+      whereClause.status = status;
+    } else {
+      if (published === 'true' || published === true)
+        whereClause.status = SurveyStatus.PUBLISHED;
+      if (completed === 'true' || completed === true)
+        whereClause.status = SurveyStatus.COMPLETED;
+      if (trashed === 'true' || trashed === true) whereClause.status = SurveyStatus.TRASH;
+      if (pending === 'true' || pending === true)
+        whereClause.status = SurveyStatus.PENDING;
+      if (draft === 'true' || draft === true) whereClause.status = SurveyStatus.DRAFT;
+    }
+
     const [surveys, total, statusCounts] = await Promise.all([
       this.prisma.survey.findMany({
         where: whereClause,
@@ -146,11 +203,11 @@ export class SurveyService {
 
       this.prisma.survey.groupBy({
         by: ['status'],
-        where: whereClause,
+        where: baseWhere,
         _count: {
           status: true,
         },
-      })
+      }),
     ]);
 
     const countMap = {
@@ -176,12 +233,69 @@ export class SurveyService {
     };
   }
 
-  async findAllByUser(userId: number, page = 1, limit = Limit, date?: string) {
+  async findAllByUser(
+    userId: number,
+    page = 1,
+    limit = Limit,
+    filters: {
+      date?: string;
+      status?: string;
+      search?: string;
+      category?: string;
+      published?: any;
+      completed?: any;
+      trashed?: any;
+      pending?: any;
+      draft?: any;
+    } = {},
+  ) {
     const skip = (page - 1) * limit;
+    const {
+      date,
+      status,
+      search,
+      category,
+      published,
+      completed,
+      trashed,
+      pending,
+      draft,
+    } = filters;
 
-    const whereClause: any = { userId };
+    const baseWhere: any = { userId };
+
     if (date) {
-      whereClause.createdAt = { gte: new Date(date) }; // Filter by date if provided
+      baseWhere.createdAt = { gte: new Date(date) };
+    }
+
+    if (search) {
+      baseWhere.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (category) {
+      baseWhere.surveyInterests = {
+        some: {
+          name: { contains: category, mode: 'insensitive' },
+        },
+      };
+    }
+
+    const whereClause = { ...baseWhere };
+
+    if (status) {
+      whereClause.status = status;
+    } else {
+      if (published === 'true' || published === true)
+        whereClause.status = SurveyStatus.PUBLISHED;
+      if (completed === 'true' || completed === true)
+        whereClause.status = SurveyStatus.COMPLETED;
+      if (trashed === 'true' || trashed === true) whereClause.status = SurveyStatus.TRASH;
+      if (pending === 'true' || pending === true)
+        whereClause.status = SurveyStatus.PENDING;
+      if (draft === 'true' || draft === true) whereClause.status = 'DRAFT';
     }
 
     const [surveys, total, statusCounts] = await Promise.all([
@@ -209,15 +323,15 @@ export class SurveyService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.survey.count({ where: { userId } }),
+      this.prisma.survey.count({ where: whereClause }),
 
       this.prisma.survey.groupBy({
         by: ['status'],
-        where: { userId },
+        where: baseWhere,
         _count: {
           status: true,
         },
-      })
+      }),
     ]);
 
     const countMap = {

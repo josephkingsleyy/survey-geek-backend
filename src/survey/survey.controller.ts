@@ -48,13 +48,30 @@ export class SurveyController {
     @Query() pagination: PaginationDto,
     @CurrentUser() user: any,
     @Query('date') date?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('published') published?: boolean,
+    @Query('completed') completed?: boolean,
+    @Query('trashed') trashed?: boolean,
+    @Query('pending') pending?: boolean,
+    @Query('draft') draft?: boolean,
   ) {
-    // console.log('User accessing findAll:', user);
     try {
       return await this.surveyService.findAll(
         pagination.page,
         pagination.limit,
-        date,
+        {
+          date,
+          status,
+          search,
+          category,
+          published,
+          completed,
+          trashed,
+          pending,
+          draft,
+        },
       );
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -67,13 +84,31 @@ export class SurveyController {
     @CurrentUser('userId') userId: number,
     @Query() pagination: PaginationDto,
     @Query('date') date?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('published') published?: boolean,
+    @Query('completed') completed?: boolean,
+    @Query('trashed') trashed?: boolean,
+    @Query('pending') pending?: boolean,
+    @Query('draft') draft?: boolean,
   ) {
     try {
       return await this.surveyService.findAllByUser(
         userId,
         pagination.page,
         pagination.limit,
-        date,
+        {
+          date,
+          status,
+          search,
+          category,
+          published,
+          completed,
+          trashed,
+          pending,
+          draft,
+        },
       );
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
