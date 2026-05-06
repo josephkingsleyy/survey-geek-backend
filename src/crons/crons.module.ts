@@ -6,6 +6,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { GeneralCronService } from './general-cron.service';
 import { PaymentCronService } from './payment-cron.service';
 import { BillingCronService } from './billing-cron.service';
+import { SurveyCronService } from './survey-cron.service';
 
 @Module({
   controllers: [CronsController],
@@ -14,7 +15,8 @@ import { BillingCronService } from './billing-cron.service';
     GeneralCronService,
     PaymentCronService,
     BillingCronService,
+    SurveyCronService,
   ],
   imports: [ScheduleModule.forRoot(), PrismaModule],
 })
-export class CronsModule {}
+export class CronsModule { }

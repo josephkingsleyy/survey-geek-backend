@@ -110,6 +110,13 @@ export class SurveyController {
     }
   }
 
+  @Patch(':id/soft-delete')
+  softDeleteSurvey(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.surveyService.softDelete(id);
+  }
+
   @Patch('survey-with-question/:id')
   async updateWithQuestion(
     @Param('id', ParseIntPipe) id: number,

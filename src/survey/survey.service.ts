@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -11,6 +12,7 @@ import { UpdateSurveyDto } from './dto/update-survey.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
 import { sendEmail } from 'src/common/utils/mail-service';
+import { SurveyStatus } from '@prisma/client';
 
 @Injectable()
 export class SurveyService {
@@ -675,6 +677,32 @@ export class SurveyService {
       },
     });
   }
+
+  async softDelete(id: number) {
+    const survey = await this.prisma.survey.findUnique({ where: { id } });
+    if (!survey) {
+      throw new NotFoundException(`Survey with ID ${id} not found`);
+    }
+
+    if (survey.status === SurveyStatus.PUBLISHED) {
+      throw new BadRequestException(
+        'Published surveys cannot be moved to trash',
+      );
+    }
+
+    if (survey.status == SurveyStatus.TRASH) {
+      return this.prisma.survey.update({
+        where: { id },
+        data: { status: 'DRAFT', updatedAt: new Date() },
+      });
+    } else {
+      return this.prisma.survey.update({
+        where: { id },
+        data: { status: 'TRASH', updatedAt: new Date() },
+      });
+    }
+  }
+
 
   async remove(id: number) {
     const survey = await this.prisma.survey.findUnique({ where: { id } });
