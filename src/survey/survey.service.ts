@@ -124,7 +124,7 @@ export class SurveyService {
     if (date) {
       whereClause.createdAt = { gte: new Date(date) };
     }
-    const [surveys, total] = await Promise.all([
+    const [surveys, total, statusCounts] = await Promise.all([
       this.prisma.survey.findMany({
         where: whereClause,
         skip,
@@ -140,14 +140,39 @@ export class SurveyService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.survey.count(),
+      this.prisma.survey.count({
+        where: whereClause,
+      }),
+
+      this.prisma.survey.groupBy({
+        by: ['status'],
+        where: whereClause,
+        _count: {
+          status: true,
+        },
+      })
     ]);
+
+    const countMap = {
+      draftCount: 0,
+      publishedCount: 0,
+      pausedCount: 0,
+      completedCount: 0,
+      pendingCount: 0,
+      trashedCount: 0,
+    };
+
+    statusCounts.forEach((item) => {
+      const key = item.status.toLowerCase() + 'Count';
+      countMap[key] = item._count.status;
+    });
 
     return {
       data: surveys,
       total,
       page,
       lastPage: Math.ceil(total / limit),
+      count: countMap,
     };
   }
 
@@ -159,7 +184,7 @@ export class SurveyService {
       whereClause.createdAt = { gte: new Date(date) }; // Filter by date if provided
     }
 
-    const [surveys, total] = await Promise.all([
+    const [surveys, total, statusCounts] = await Promise.all([
       this.prisma.survey.findMany({
         where: whereClause,
         skip,
@@ -185,13 +210,36 @@ export class SurveyService {
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.survey.count({ where: { userId } }),
+
+      this.prisma.survey.groupBy({
+        by: ['status'],
+        where: { userId },
+        _count: {
+          status: true,
+        },
+      })
     ]);
+
+    const countMap = {
+      draftCount: 0,
+      publishedCount: 0,
+      pausedCount: 0,
+      completedCount: 0,
+      pendingCount: 0,
+      trashedCount: 0,
+    };
+
+    statusCounts.forEach((item) => {
+      const key = item.status.toLowerCase() + 'Count';
+      countMap[key] = item._count.status;
+    });
 
     return {
       data: surveys,
       total,
       page,
       lastPage: Math.ceil(total / limit),
+      count: countMap,
     };
   }
 
