@@ -129,7 +129,6 @@ export class SurveyService {
       completed?: any;
       trashed?: any;
       pending?: any;
-      draft?: any;
     } = {},
   ) {
     const skip = (page - 1) * limit;
@@ -142,7 +141,6 @@ export class SurveyService {
       completed,
       trashed,
       pending,
-      draft,
     } = filters;
 
     const baseWhere: any = {};
@@ -170,16 +168,21 @@ export class SurveyService {
 
     if (status) {
       whereClause.status = status;
+    } else if (published === 'true' || published === true) {
+      whereClause.status = SurveyStatus.PUBLISHED;
+    } else if (completed === 'true' || completed === true) {
+      whereClause.status = SurveyStatus.COMPLETED;
+    } else if (trashed === 'true' || trashed === true) {
+      whereClause.status = SurveyStatus.TRASH;
+    } else if (pending === 'true' || pending === true) {
+      whereClause.status = SurveyStatus.PENDING;
     } else {
-      if (published === 'true' || published === true)
-        whereClause.status = SurveyStatus.PUBLISHED;
-      if (completed === 'true' || completed === true)
-        whereClause.status = SurveyStatus.COMPLETED;
-      if (trashed === 'true' || trashed === true) whereClause.status = SurveyStatus.TRASH;
-      if (pending === 'true' || pending === true)
-        whereClause.status = SurveyStatus.PENDING;
-      if (draft === 'true' || draft === true) whereClause.status = SurveyStatus.DRAFT;
+      // default: exclude drafts
+      whereClause.status = {
+        not: SurveyStatus.DRAFT,
+      };
     }
+
 
     const [surveys, total, statusCounts] = await Promise.all([
       this.prisma.survey.findMany({
@@ -211,7 +214,6 @@ export class SurveyService {
     ]);
 
     const countMap = {
-      draftCount: 0,
       publishedCount: 0,
       pausedCount: 0,
       completedCount: 0,
