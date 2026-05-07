@@ -77,6 +77,10 @@ export class SurveyController {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+  @Get('/survey/count')
+  async getSurveyCounts() {
+    return await this.surveyService.getSurveyCounts();
+  }
 
   // 🔹 User: get only their own surveys
   @Get('my-surveys')

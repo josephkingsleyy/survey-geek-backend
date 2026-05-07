@@ -407,6 +407,44 @@ export class SurveyService {
 
     return survey;
   }
+  // survey.service.ts
+
+  async getSurveyCounts() {
+    const statusCounts = await this.prisma.survey.groupBy({
+      by: ['status'],
+      _count: {
+        status: true,
+      },
+    });
+
+    const countMap = {
+      draftCount: 0,
+      publishedCount: 0,
+      pausedCount: 0,
+      completedCount: 0,
+      pendingCount: 0,
+      trashedCount: 0,
+    };
+
+    const statusKeyMap = {
+      DRAFT: 'draftCount',
+      PUBLISHED: 'publishedCount',
+      PAUSED: 'pausedCount',
+      COMPLETED: 'completedCount',
+      PENDING: 'pendingCount',
+      TRASH: 'trashedCount',
+    };
+
+    statusCounts.forEach((item) => {
+      const key = statusKeyMap[item.status];
+
+      if (key) {
+        countMap[key] = item._count.status;
+      }
+    });
+
+    return countMap;
+  }
 
   // 🔹 Get full survey details for dashboard
   async getSurveyDetails(slug: string) {
