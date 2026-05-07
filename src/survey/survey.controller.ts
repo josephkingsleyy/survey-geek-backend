@@ -55,6 +55,7 @@ export class SurveyController {
     @Query('completed') completed?: boolean,
     @Query('trashed') trashed?: boolean,
     @Query('pending') pending?: boolean,
+    @Query('draft') draft?: boolean,
   ) {
     try {
       return await this.surveyService.findAll(
@@ -69,6 +70,7 @@ export class SurveyController {
           completed,
           trashed,
           pending,
+          draft,
         },
       );
     } catch (err) {
