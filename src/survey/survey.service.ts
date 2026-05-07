@@ -457,10 +457,22 @@ export class SurveyService {
       0,
     );
 
-    return {
-      total,
-      ...countMap,
-    };
+
+    return [
+      {
+        key: 'total',
+        value: total,
+      },
+
+      ...Object.entries(countMap).map(([key, value]) => ({
+        key,
+        value,
+      })),
+    ];
+    // return {
+    //   total,
+    //   ...countMap,
+    // };
   }
 
   // 🔹 Get full survey details for dashboard
