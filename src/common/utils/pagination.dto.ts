@@ -18,4 +18,13 @@ export class PaginationDto {
 
   @IsOptional()
   status?: SurveyStatus;
+
+  @IsOptional()
+  search?: string;
+
+  @IsOptional()
+  category?: string;
+
+  @IsOptional()
+  date?: string;
 }
