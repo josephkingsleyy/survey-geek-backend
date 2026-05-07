@@ -199,9 +199,7 @@ export class SurveyService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.survey.count({
-        where: whereClause,
-      }),
+      this.prisma.survey.count(),
 
       this.prisma.survey.groupBy({
         by: ['status'],
