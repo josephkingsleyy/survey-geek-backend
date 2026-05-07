@@ -409,9 +409,18 @@ export class SurveyService {
   }
   // survey.service.ts
 
-  async getSurveyCounts() {
+  async getSurveyCounts(user: any) {
+    // Admin sees everything
+    const whereClause =
+      user.role === 'Admin'
+        ? {}
+        : {
+          userId: user.id,
+        };
+
     const statusCounts = await this.prisma.survey.groupBy({
       by: ['status'],
+      where: whereClause,
       _count: {
         status: true,
       },
@@ -443,7 +452,15 @@ export class SurveyService {
       }
     });
 
-    return countMap;
+    const total = Object.values(countMap).reduce(
+      (acc, curr) => acc + curr,
+      0,
+    );
+
+    return {
+      total,
+      ...countMap,
+    };
   }
 
   // 🔹 Get full survey details for dashboard

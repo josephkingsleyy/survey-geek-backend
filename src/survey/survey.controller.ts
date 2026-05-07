@@ -77,9 +77,11 @@ export class SurveyController {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-  @Get('/survey/count')
-  async getSurveyCounts() {
-    return await this.surveyService.getSurveyCounts();
+  @Get('/count/surveys')
+  async getSurveyCounts(
+    @CurrentUser() user: any,
+  ) {
+    return await this.surveyService.getSurveyCounts(user);
   }
 
   // 🔹 User: get only their own surveys
