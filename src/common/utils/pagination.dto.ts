@@ -1,6 +1,7 @@
 import { IsOptional, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Limit } from './app';
+import { SurveyStatus } from '@prisma/client';
 
 export class PaginationDto {
   @IsOptional()
@@ -14,4 +15,7 @@ export class PaginationDto {
   @IsInt()
   @Min(1)
   limit?: number = Limit;
+
+  @IsOptional()
+  status?: SurveyStatus;
 }

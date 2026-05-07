@@ -127,7 +127,7 @@ export class SurveyService {
       category?: string;
       published?: any;
       completed?: any;
-      trashed?: any;
+      trash?: any;
       pending?: any;
       draft?: any;
     } = {},
@@ -140,7 +140,7 @@ export class SurveyService {
       category,
       published,
       completed,
-      trashed,
+      trash,
       pending,
       draft,
     } = filters;
@@ -174,7 +174,7 @@ export class SurveyService {
       whereClause.status = SurveyStatus.PUBLISHED;
     } else if (completed === 'true' || completed === true) {
       whereClause.status = SurveyStatus.COMPLETED;
-    } else if (trashed === 'true' || trashed === true) {
+    } else if (trash === 'true' || trash === true) {
       whereClause.status = SurveyStatus.TRASH;
     } else if (pending === 'true' || pending === true) {
       whereClause.status = SurveyStatus.PENDING;
@@ -212,6 +212,7 @@ export class SurveyService {
       }),
     ]);
 
+
     const countMap = {
       draftCount: 0,
       publishedCount: 0,
@@ -221,9 +222,20 @@ export class SurveyService {
       trashedCount: 0,
     };
 
+    const statusKeyMap = {
+      DRAFT: 'draftCount',
+      PUBLISHED: 'publishedCount',
+      PAUSED: 'pausedCount',
+      COMPLETED: 'completedCount',
+      PENDING: 'pendingCount',
+      TRASH: 'trashedCount',
+    };
+
     statusCounts.forEach((item) => {
-      const key = item.status.toLowerCase() + 'Count';
-      countMap[key] = item._count.status;
+      const key = statusKeyMap[item.status];
+      if (key) {
+        countMap[key] = item._count.status;
+      }
     });
 
     return {
@@ -246,7 +258,7 @@ export class SurveyService {
       category?: string;
       published?: any;
       completed?: any;
-      trashed?: any;
+      trash?: any;
       pending?: any;
       draft?: any;
     } = {},
@@ -259,7 +271,7 @@ export class SurveyService {
       category,
       published,
       completed,
-      trashed,
+      trash,
       pending,
       draft,
     } = filters;
@@ -294,7 +306,7 @@ export class SurveyService {
         whereClause.status = SurveyStatus.PUBLISHED;
       if (completed === 'true' || completed === true)
         whereClause.status = SurveyStatus.COMPLETED;
-      if (trashed === 'true' || trashed === true) whereClause.status = SurveyStatus.TRASH;
+      if (trash === 'true' || trash === true) whereClause.status = SurveyStatus.TRASH;
       if (pending === 'true' || pending === true)
         whereClause.status = SurveyStatus.PENDING;
       if (draft === 'true' || draft === true) whereClause.status = 'DRAFT';
@@ -345,9 +357,20 @@ export class SurveyService {
       trashedCount: 0,
     };
 
+    const statusKeyMap = {
+      DRAFT: 'draftCount',
+      PUBLISHED: 'publishedCount',
+      PAUSED: 'pausedCount',
+      COMPLETED: 'completedCount',
+      PENDING: 'pendingCount',
+      TRASH: 'trashedCount',
+    };
+
     statusCounts.forEach((item) => {
-      const key = item.status.toLowerCase() + 'Count';
-      countMap[key] = item._count.status;
+      const key = statusKeyMap[item.status];
+      if (key) {
+        countMap[key] = item._count.status;
+      }
     });
 
     return {
