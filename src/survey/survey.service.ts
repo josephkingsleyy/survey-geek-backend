@@ -477,8 +477,6 @@ export class SurveyService {
       (acc, curr) => acc + curr,
       0,
     );
-
-    console.log(total);
     
     return {
       total,
