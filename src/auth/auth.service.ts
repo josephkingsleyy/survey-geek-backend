@@ -211,15 +211,34 @@ export class AuthService {
   }
 
   async getUsersStatistics() {
+
     try {
-      const totalUsers = await this.prisma.user.count();
-      const onboardedUsers = await this.prisma.user.count({
-        where: { hasOnboarded: true },
-      });
-      const notOnboardedUsers = await this.prisma.user.count({
-        where: { hasOnboarded: false },
-      });
-      return { totalUsers, onboardedUsers, notOnboardedUsers };
+      const [totalUsers, onboardedUsers, notOnboardedUsers, adminUsers, normalUsers] = await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.user.count({
+          where: { hasOnboarded: true },
+        }),
+        this.prisma.user.count({
+          where: { hasOnboarded: false },
+        }),
+        this.prisma.user.count({
+          where: {
+            role: {
+              equals: 'Admin',
+              mode: 'insensitive'
+            }
+          },
+        }),
+        this.prisma.user.count({
+          where: {
+            role: {
+              equals: 'User',
+              mode: 'insensitive'
+            }
+          },
+        }),
+      ]);
+      return { totalUsers, onboardedUsers, notOnboardedUsers, adminUsers, normalUsers };
     } catch (err) {
       throw new InternalServerErrorException(err.message);
     }
