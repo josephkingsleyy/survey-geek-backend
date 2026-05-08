@@ -147,7 +147,6 @@ export class SurveyService {
 
     const baseWhere: any = {};
 
-
     if (date) {
       const startDate = new Date(date);
       startDate.setHours(0, 0, 0, 0);
@@ -205,7 +204,7 @@ export class SurveyService {
             },
           },
           responses: true,
-          user: { select: { id: true, email: true } },
+          user: { select: { id: true, email: true, firstName: true, lastName: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -287,7 +286,16 @@ export class SurveyService {
     const baseWhere: any = { userId };
 
     if (date) {
-      baseWhere.createdAt = { gte: new Date(date) };
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      baseWhere.createdAt = {
+        gte: startDate,
+        lte: endDate,
+      };
     }
 
     if (search) {
