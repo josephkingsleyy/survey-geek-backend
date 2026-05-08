@@ -96,6 +96,11 @@ export class AuthController {
     return this.authService.getProfile(userId);
   }
 
+  @Get('users/statistics')
+  async getUsersStatistics() {
+    return this.authService.getUsersStatistics();
+  }
+
   @Patch('update')
   @UseGuards(JwtAuthGuard)
   async updateAccount(

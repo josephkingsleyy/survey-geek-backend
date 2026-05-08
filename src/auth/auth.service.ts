@@ -210,6 +210,22 @@ export class AuthService {
     }
   }
 
+  async getUsersStatistics() {
+    try {
+      const totalUsers = await this.prisma.user.count();
+      const onboardedUsers = await this.prisma.user.count({
+        where: { hasOnboarded: true },
+      });
+      const notOnboardedUsers = await this.prisma.user.count({
+        where: { hasOnboarded: false },
+      });
+      return { totalUsers, onboardedUsers, notOnboardedUsers };
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+
   async validateOAuthLogin(profile: any) {
     try {
       const { email, firstName, lastName, provider, providerId, image } = profile;
