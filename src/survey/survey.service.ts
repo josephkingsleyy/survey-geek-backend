@@ -147,8 +147,18 @@ export class SurveyService {
 
     const baseWhere: any = {};
 
+
     if (date) {
-      baseWhere.createdAt = { gte: new Date(date) };
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      baseWhere.createdAt = {
+        gte: startDate,
+        lte: endDate,
+      };
     }
 
     if (search) {
