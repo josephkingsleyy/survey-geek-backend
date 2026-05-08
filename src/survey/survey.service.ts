@@ -429,7 +429,7 @@ export class SurveyService {
 
   async getSurveyCounts(user: any) {
 
-    console.log('user', user);
+
     
     // Admin sees everything
     const whereClause =
