@@ -98,6 +98,10 @@ export class UpdateSurveyDto {
   status?: SurveyStatus;
 
   @IsOptional()
+  @IsString()
+  rejectionReason?: string;
+
+  @IsOptional()
   @IsArray()
   @IsInt({ each: true })
   surveyInterestIds?: number[];

@@ -243,6 +243,7 @@ enum SurveyStatus {
   COMPLETED // Closed after responses or deadline
   PENDING // Old but kept for records
   TRASH // Soft-deleted
+  REJECTED // rejected
 }
 
 model Survey {
@@ -262,8 +263,9 @@ model Survey {
   updatedAt       DateTime     @updatedAt
   slug            String?      @unique
 
-  sections  Section[]  @relation("SurveySections")
-  responses Response[]
+  sections        Section[]  @relation("SurveySections")
+  responses       Response[]
+  rejectionReason String?
 
   surveyInterests SurveyInterest[] @relation("SurveyInterests")
 }

@@ -73,6 +73,10 @@ export class CreateSurveyDto {
   @IsDateString()
   endDate?: Date;
 
+  @IsOptional()
+  @IsString()
+  rejectionReason?: string;
+
   // 🔹 Optional nested questions
   @IsOptional()
   @IsArray()
