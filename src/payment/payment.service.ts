@@ -14,7 +14,7 @@ export class PaymentService {
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
-  ) {}
+  ) { }
 
   async create(dto: CreatePaymentDto, userId: number) {
     const user = await this.prisma.user.findUnique({
@@ -82,8 +82,7 @@ export class PaymentService {
         };
       } catch (err: any) {
         throw new HttpException(
-          `Flutterwave initialization failed: ${
-            err.response?.data?.message || err.message
+          `Flutterwave initialization failed: ${err.response?.data?.message || err.message
           }`,
           HttpStatus.BAD_REQUEST,
         );
@@ -324,7 +323,7 @@ export class PaymentService {
   async getWallet(id: number) {
     try {
       const res = await this.prisma.wallet.findUnique({
-        where: { id },
+        where: { userId: id },
         include: {
           transactions: {
             orderBy: { createdAt: 'desc' },

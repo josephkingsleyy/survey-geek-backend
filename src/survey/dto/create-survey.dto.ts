@@ -87,6 +87,31 @@ export class CreateSurveyDto {
   @IsOptional()
   @IsString()
   surveyPurpose?: string;
+
+  @IsOptional()
+  @IsString()
+  targetAudience?: string;
+
+  @IsOptional()
+  audienceOccupation?: string[];
+
+  @IsOptional()
+  audienceState?: string[];
+
+  @IsOptional()
+  timeline?: string;
+
+  @IsOptional()
+  questionNumber?: string;
+
+  @IsOptional()
+  modeOfCollection?: string;
+
+  @IsOptional()
+  support?: string;
+
+  @IsOptional()
+  price?: string;
 }
 
 

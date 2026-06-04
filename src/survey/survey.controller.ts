@@ -84,6 +84,11 @@ export class SurveyController {
     return await this.surveyService.getSurveyCounts(user);
   }
 
+  @Get('/distinct/occupation-states')
+  async getDistinctOccupationAndStates() {
+    return await this.surveyService.getDistinctOccupationAndStates();
+  }
+
   // 🔹 User: get only their own surveys
   @Get('my-surveys')
   async findMySurveys(

@@ -13,110 +13,267 @@ import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
 import { sendEmail } from 'src/common/utils/mail-service';
 import { SurveyStatus } from '@prisma/client';
+import { PricingService } from './pricing.service';
 
 @Injectable()
 export class SurveyService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    private readonly pricingService: PricingService,
   ) { }
 
+  // async create(createSurveyDto: CreateSurveyDto, userId: number) {
+  //   const { questions, surveyInterestIds, audienceOccupation, audienceState, ...surveyData } = createSurveyDto;
+
+  //   const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  //   if (!user) throw new NotFoundException('User not found');
+  //   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  //   const slug = Array.from({ length: 12 }, () => charset.charAt(Math.floor(Math.random() * charset.length))).join('');
+
+  //   const calculatedPrice =
+  //     this.pricingService.calculatePrice(createSurveyDto);
+
+  //   const wallet = await this.prisma.wallet.findUnique({
+  //     where: { userId },
+  //   });
+
+  //   if (!wallet) {
+  //     throw new NotFoundException('Wallet not found');
+  //   }
+
+  //   if (wallet.balance < calculatedPrice) {
+  //     throw new BadRequestException('Insufficient points');
+  //   }
+
+  //   // await this.prisma.wallet.update({
+  //   //   where: { userId },
+  //   //   data: {
+  //   //     balance: wallet.balance - calculatedPrice,
+  //   //   },
+  //   // });
+
+  //   // await this.prisma.walletTransaction.create({
+  //   //   data: {
+  //   //     walletId: wallet.id,
+  //   //     amount: -calculatedPrice,
+  //   //     type: 'debit',
+  //   //     description: `Survey creation with ${calculatedPrice} points`,
+  //   //   },
+  //   // });
+
+  //   try {
+  //     const result = await this.prisma.$transaction(async (tx) => {
+  //       const wallet = await tx.wallet.findUnique({
+  //         where: { userId },
+  //       });
+
+  //       if (!wallet) {
+  //         throw new NotFoundException('Wallet not found');
+  //       }
+
+  //       if (wallet.balance < calculatedPrice) {
+  //         throw new BadRequestException('Insufficient points');
+  //       }
+
+  //       await tx.wallet.update({
+  //         where: { userId },
+  //         data: {
+  //           balance: {
+  //             decrement: calculatedPrice,
+  //           },
+  //         },
+  //       });
+
+  //       await tx.walletTransaction.create({
+  //         data: {
+  //           walletId: wallet.id,
+  //           amount: -calculatedPrice,
+  //           type: 'debit',
+  //           description: `Survey creation with ${calculatedPrice} points`,
+  //         },
+  //       });
+
+  //       // 1️⃣ Create the survey
+  //       const survey = await this.prisma.survey.create({
+  //         data: {
+  //           ...surveyData,
+  //           slug: slug,
+  //           userId,
+  //           price: calculatedPrice,
+  //           audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
+  //           audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+  //           surveyInterests: surveyInterestIds?.length
+  //             ? { connect: surveyInterestIds.map((id) => ({ id })) }
+  //             : undefined,
+  //         },
+  //         include: {
+  //           surveyInterests: true,
+  //         },
+  //       });
+
+  //       // 2️⃣ Create a default section for the survey
+  //       const section = await this.prisma.section.create({
+  //         data: {
+  //           title: `Section 1 for ${survey.title}`,
+  //           description: 'Default section created with survey',
+  //           surveyId: survey.id,
+  //           order: 1,
+  //         },
+  //       });
+
+  //       // 3️⃣ Create questions under that section (if any)
+  //       if (questions?.length) {
+  //         await Promise.all(
+  //           questions.map((q) =>
+  //             this.prisma.question.create({
+  //               data: {
+  //                 text: q.text,
+  //                 type: q.type,
+  //                 options: q.options ?? [],
+  //                 scaleMin: q.scaleMin ?? null,
+  //                 scaleMax: q.scaleMax ?? null,
+  //                 allowUpload: q.allowUpload ?? false,
+  //                 sectionId: section.id,
+  //                 userId: userId,
+  //               },
+  //             }),
+  //           ),
+  //         );
+  //       }
+
+  //       // 4️⃣ Notify interested users (if applicable)
+  //       // if (surveyInterestIds?.length) {
+  //       //   const users = await this.prisma.user.findMany({
+  //       //     where: {
+  //       //       surveyInterest: {
+  //       //         // ✅ ensure matches your User model relation name
+  //       //         some: { id: { in: surveyInterestIds } },
+  //       //       },
+  //       //     },
+  //       //     select: { id: true },
+  //       //   });
+
+  //       //   const userIds = users.map((u) => u.id);
+
+  //       //   if (userIds.length > 0) {
+  //       //     await this.notificationService.broadcast(userIds, {
+  //       //       title: 'New Survey Available',
+  //       //       message: `A new survey "${survey.title}" was just published in your interest area.`,
+  //       //       type: 'survey',
+  //       //     });
+  //       //   }
+  //       // }
+
+  //       // 5️⃣ Return survey with related data
+  //       return await this.prisma.survey.findUnique({
+  //         where: { id: survey.id },
+  //         include: {
+  //           surveyInterests: true,
+  //           sections: {
+  //             include: { questions: true },
+  //           },
+  //         },
+  //       })
+  //     });
+  //   } catch (error) {
+  //     console.error('❌ Failed to create survey:', error);
+  //     throw new InternalServerErrorException(
+  //       `Failed to create survey: ${error.message}`,
+  //     );
+  //   }
+  // }
+
+  // 🔹 Admin: get all surveys with pagination
+
   async create(createSurveyDto: CreateSurveyDto, userId: number) {
-    const { questions, surveyInterestIds, ...surveyData } = createSurveyDto;
+    const { questions, surveyInterestIds, audienceOccupation, audienceState, ...surveyData } = createSurveyDto;
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
     const slug = Array.from({ length: 12 }, () => charset.charAt(Math.floor(Math.random() * charset.length))).join('');
 
+    const calculatedPrice = this.pricingService.calculatePrice(createSurveyDto);
+
     try {
-      // 1️⃣ Create the survey
-      const survey = await this.prisma.survey.create({
-        data: {
-          ...surveyData,
-          slug: slug,
-          userId,
-          surveyInterests: surveyInterestIds?.length
-            ? { connect: surveyInterestIds.map((id) => ({ id })) }
-            : undefined,
-        },
-        include: {
-          surveyInterests: true,
-        },
-      });
+      return await this.prisma.$transaction(async (tx) => {
+        const wallet = await tx.wallet.findUnique({ where: { userId } });
+        if (!wallet) throw new NotFoundException('Wallet not found');
+        if (wallet.balance < calculatedPrice) throw new BadRequestException('Insufficient points');
 
-      // 2️⃣ Create a default section for the survey
-      const section = await this.prisma.section.create({
-        data: {
-          title: `Section 1 for ${survey.title}`,
-          description: 'Default section created with survey',
-          surveyId: survey.id,
-          order: 1,
-        },
-      });
-
-      // 3️⃣ Create questions under that section (if any)
-      if (questions?.length) {
-        await Promise.all(
-          questions.map((q) =>
-            this.prisma.question.create({
-              data: {
-                text: q.text,
-                type: q.type,
-                options: q.options ?? [],
-                scaleMin: q.scaleMin ?? null,
-                scaleMax: q.scaleMax ?? null,
-                allowUpload: q.allowUpload ?? false,
-                sectionId: section.id,
-                userId: userId,
-              },
-            }),
-          ),
-        );
-      }
-
-      // 4️⃣ Notify interested users (if applicable)
-      if (surveyInterestIds?.length) {
-        const users = await this.prisma.user.findMany({
-          where: {
-            surveyInterest: {
-              // ✅ ensure matches your User model relation name
-              some: { id: { in: surveyInterestIds } },
-            },
-          },
-          select: { id: true },
+        await tx.wallet.update({
+          where: { userId },
+          data: { balance: { decrement: calculatedPrice } },
         });
 
-        const userIds = users.map((u) => u.id);
-
-        if (userIds.length > 0) {
-          await this.notificationService.broadcast(userIds, {
-            title: 'New Survey Available',
-            message: `A new survey "${survey.title}" was just published in your interest area.`,
-            type: 'survey',
-          });
-        }
-      }
-
-      // 5️⃣ Return survey with related data
-      return await this.prisma.survey.findUnique({
-        where: { id: survey.id },
-        include: {
-          surveyInterests: true,
-          sections: {
-            include: { questions: true },
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            amount: -calculatedPrice,
+            type: 'debit',
+            description: `Survey creation with ${calculatedPrice}`,
           },
-        },
+        });
+
+        const survey = await tx.survey.create({
+          data: {
+            ...surveyData,
+            slug,
+            userId,
+            price: calculatedPrice,
+            audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
+            audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+            surveyInterests: surveyInterestIds?.length
+              ? { connect: surveyInterestIds.map((id) => ({ id })) }
+              : undefined,
+          },
+          include: { surveyInterests: true },
+        });
+
+        const section = await tx.section.create({
+          data: {
+            title: `Section 1 for ${survey.title}`,
+            description: 'Default section created with survey',
+            surveyId: survey.id,
+            order: 1,
+          },
+        });
+
+        if (questions?.length) {
+          await Promise.all(
+            questions.map((q) =>
+              tx.question.create({
+                data: {
+                  text: q.text,
+                  type: q.type,
+                  options: q.options ?? [],
+                  scaleMin: q.scaleMin ?? null,
+                  scaleMax: q.scaleMax ?? null,
+                  allowUpload: q.allowUpload ?? false,
+                  sectionId: section.id,
+                  userId,
+                },
+              }),
+            ),
+          );
+        }
+
+        return tx.survey.findUnique({
+          where: { id: survey.id },
+          include: {
+            surveyInterests: true,
+            sections: { include: { questions: true } },
+          },
+        });
       });
     } catch (error) {
       console.error('❌ Failed to create survey:', error);
-      throw new InternalServerErrorException(
-        `Failed to create survey: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Failed to create survey: ${error.message}`);
     }
   }
 
-  // 🔹 Admin: get all surveys with pagination
   async findAll(
     page = 1,
     limit = Limit,
@@ -429,8 +586,6 @@ export class SurveyService {
 
   async getSurveyCounts(user: any) {
 
-
-    
     // Admin sees everything
     const whereClause =
       user.role === 'Admin'
@@ -477,10 +632,41 @@ export class SurveyService {
       (acc, curr) => acc + curr,
       0,
     );
-    
+
     return {
       total,
       ...countMap,
+    };
+  }
+
+
+  async getDistinctOccupationAndStates() {
+    const users = await this.prisma.user.findMany({
+      where: {
+        hasOnboarded: true,
+        stateOfResidence: { not: null },
+        occupation: { not: null },
+      },
+      select: {
+        stateOfResidence: true,
+        occupation: true,
+      },
+    });
+
+    const stateSet = new Set<string>();
+    const occupationSet = new Set<string>();
+
+    for (const user of users) {
+      const state = user.stateOfResidence?.toLowerCase().trim();
+      const occupation = user.occupation?.toLowerCase().trim();
+
+      if (state) stateSet.add(state);
+      if (occupation) occupationSet.add(occupation);
+    }
+
+    return {
+      states: Array.from(stateSet),
+      occupations: Array.from(occupationSet),
     };
   }
 
@@ -627,11 +813,16 @@ export class SurveyService {
   }
 
   async update(id: string, updateSurveyDto: UpdateSurveyDto) {
-    const { sections, ...surveyData } = updateSurveyDto;
+    const { sections, audienceOccupation, audienceState, surveyInterestIds, maxResponse, price, ...surveyData } = updateSurveyDto;
     try {
       const updatedSurvey = await this.prisma.survey.update({
         where: isNaN(Number(id)) ? { slug: id } : { id: Number(id) },
-        data: surveyData as any,
+        data: {
+          ...surveyData,
+          audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
+          audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+          price: price !== undefined ? parseFloat(price as string) : undefined,
+        },
         include: {
           user: true,
         }
@@ -694,7 +885,7 @@ export class SurveyService {
   }
 
   async updateWithQuestionOld(id: number, dto: UpdateSurveyDto) {
-    const { sections, surveyInterestIds, ...surveyData } = dto;
+    const { sections, surveyInterestIds, audienceOccupation, audienceState, maxResponse, price, ...surveyData } = dto;
 
     // 1️⃣ Ensure survey exists
     const existingSurvey = await this.prisma.survey.findUnique({
@@ -709,7 +900,12 @@ export class SurveyService {
     // 2️⃣ Update simple survey fields first
     await this.prisma.survey.update({
       where: { id },
-      data: surveyData,
+      data: {
+        ...surveyData,
+        audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
+        audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+        price: price !== undefined ? parseFloat(price as string) : undefined,
+      },
     });
 
     // 3️⃣ Update survey interests (Many-to-Many)
@@ -812,7 +1008,7 @@ export class SurveyService {
   }
 
   async updateWithQuestion(id: number, dto: UpdateSurveyDto) {
-    const { sections, surveyInterestIds, ...surveyData } = dto;
+    const { sections, surveyInterestIds, audienceOccupation, audienceState, maxResponse, price, ...surveyData } = dto;
 
     // 1️⃣ Ensure survey exists
     const existingSurvey = await this.prisma.survey.findUnique({
@@ -825,7 +1021,12 @@ export class SurveyService {
     // 2️⃣ Update survey fields
     await this.prisma.survey.update({
       where: { id },
-      data: surveyData,
+      data: {
+        ...surveyData,
+        audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
+        audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+        price: price !== undefined ? parseFloat(price as string) : undefined,
+      },
     });
 
     // 3️⃣ Update survey interests (many-to-many)

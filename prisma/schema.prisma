@@ -263,9 +263,17 @@ model Survey {
   updatedAt       DateTime     @updatedAt
   slug            String?      @unique
 
-  sections        Section[]  @relation("SurveySections")
-  responses       Response[]
-  rejectionReason String?
+  sections           Section[]  @relation("SurveySections")
+  responses          Response[]
+  rejectionReason    String?
+  targetAudience     String?
+  audienceOccupation String?
+  audienceState      String?
+  timeline           String?
+  questionNumber     String?
+  modeOfCollection   String?
+  support            String?
+  price              Float?
 
   surveyInterests SurveyInterest[] @relation("SurveyInterests")
 }
