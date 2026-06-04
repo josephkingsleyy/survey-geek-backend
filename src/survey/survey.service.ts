@@ -23,169 +23,6 @@ export class SurveyService {
     private readonly pricingService: PricingService,
   ) { }
 
-  // async create(createSurveyDto: CreateSurveyDto, userId: number) {
-  //   const { questions, surveyInterestIds, audienceOccupation, audienceState, ...surveyData } = createSurveyDto;
-
-  //   const user = await this.prisma.user.findUnique({ where: { id: userId } });
-  //   if (!user) throw new NotFoundException('User not found');
-  //   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-  //   const slug = Array.from({ length: 12 }, () => charset.charAt(Math.floor(Math.random() * charset.length))).join('');
-
-  //   const calculatedPrice =
-  //     this.pricingService.calculatePrice(createSurveyDto);
-
-  //   const wallet = await this.prisma.wallet.findUnique({
-  //     where: { userId },
-  //   });
-
-  //   if (!wallet) {
-  //     throw new NotFoundException('Wallet not found');
-  //   }
-
-  //   if (wallet.balance < calculatedPrice) {
-  //     throw new BadRequestException('Insufficient points');
-  //   }
-
-  //   // await this.prisma.wallet.update({
-  //   //   where: { userId },
-  //   //   data: {
-  //   //     balance: wallet.balance - calculatedPrice,
-  //   //   },
-  //   // });
-
-  //   // await this.prisma.walletTransaction.create({
-  //   //   data: {
-  //   //     walletId: wallet.id,
-  //   //     amount: -calculatedPrice,
-  //   //     type: 'debit',
-  //   //     description: `Survey creation with ${calculatedPrice} points`,
-  //   //   },
-  //   // });
-
-  //   try {
-  //     const result = await this.prisma.$transaction(async (tx) => {
-  //       const wallet = await tx.wallet.findUnique({
-  //         where: { userId },
-  //       });
-
-  //       if (!wallet) {
-  //         throw new NotFoundException('Wallet not found');
-  //       }
-
-  //       if (wallet.balance < calculatedPrice) {
-  //         throw new BadRequestException('Insufficient points');
-  //       }
-
-  //       await tx.wallet.update({
-  //         where: { userId },
-  //         data: {
-  //           balance: {
-  //             decrement: calculatedPrice,
-  //           },
-  //         },
-  //       });
-
-  //       await tx.walletTransaction.create({
-  //         data: {
-  //           walletId: wallet.id,
-  //           amount: -calculatedPrice,
-  //           type: 'debit',
-  //           description: `Survey creation with ${calculatedPrice} points`,
-  //         },
-  //       });
-
-  //       // 1️⃣ Create the survey
-  //       const survey = await this.prisma.survey.create({
-  //         data: {
-  //           ...surveyData,
-  //           slug: slug,
-  //           userId,
-  //           price: calculatedPrice,
-  //           audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
-  //           audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
-  //           surveyInterests: surveyInterestIds?.length
-  //             ? { connect: surveyInterestIds.map((id) => ({ id })) }
-  //             : undefined,
-  //         },
-  //         include: {
-  //           surveyInterests: true,
-  //         },
-  //       });
-
-  //       // 2️⃣ Create a default section for the survey
-  //       const section = await this.prisma.section.create({
-  //         data: {
-  //           title: `Section 1 for ${survey.title}`,
-  //           description: 'Default section created with survey',
-  //           surveyId: survey.id,
-  //           order: 1,
-  //         },
-  //       });
-
-  //       // 3️⃣ Create questions under that section (if any)
-  //       if (questions?.length) {
-  //         await Promise.all(
-  //           questions.map((q) =>
-  //             this.prisma.question.create({
-  //               data: {
-  //                 text: q.text,
-  //                 type: q.type,
-  //                 options: q.options ?? [],
-  //                 scaleMin: q.scaleMin ?? null,
-  //                 scaleMax: q.scaleMax ?? null,
-  //                 allowUpload: q.allowUpload ?? false,
-  //                 sectionId: section.id,
-  //                 userId: userId,
-  //               },
-  //             }),
-  //           ),
-  //         );
-  //       }
-
-  //       // 4️⃣ Notify interested users (if applicable)
-  //       // if (surveyInterestIds?.length) {
-  //       //   const users = await this.prisma.user.findMany({
-  //       //     where: {
-  //       //       surveyInterest: {
-  //       //         // ✅ ensure matches your User model relation name
-  //       //         some: { id: { in: surveyInterestIds } },
-  //       //       },
-  //       //     },
-  //       //     select: { id: true },
-  //       //   });
-
-  //       //   const userIds = users.map((u) => u.id);
-
-  //       //   if (userIds.length > 0) {
-  //       //     await this.notificationService.broadcast(userIds, {
-  //       //       title: 'New Survey Available',
-  //       //       message: `A new survey "${survey.title}" was just published in your interest area.`,
-  //       //       type: 'survey',
-  //       //     });
-  //       //   }
-  //       // }
-
-  //       // 5️⃣ Return survey with related data
-  //       return await this.prisma.survey.findUnique({
-  //         where: { id: survey.id },
-  //         include: {
-  //           surveyInterests: true,
-  //           sections: {
-  //             include: { questions: true },
-  //           },
-  //         },
-  //       })
-  //     });
-  //   } catch (error) {
-  //     console.error('❌ Failed to create survey:', error);
-  //     throw new InternalServerErrorException(
-  //       `Failed to create survey: ${error.message}`,
-  //     );
-  //   }
-  // }
-
-  // 🔹 Admin: get all surveys with pagination
-
   async create(createSurveyDto: CreateSurveyDto, userId: number) {
     const { questions, surveyInterestIds, audienceOccupation, audienceState, ...surveyData } = createSurveyDto;
 
@@ -208,15 +45,6 @@ export class SurveyService {
           data: { balance: { decrement: calculatedPrice } },
         });
 
-        await tx.walletTransaction.create({
-          data: {
-            walletId: wallet.id,
-            amount: -calculatedPrice,
-            type: 'debit',
-            description: `Survey creation with ${calculatedPrice}`,
-          },
-        });
-
         const survey = await tx.survey.create({
           data: {
             ...surveyData,
@@ -230,6 +58,15 @@ export class SurveyService {
               : undefined,
           },
           include: { surveyInterests: true },
+        });
+
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            amount: -calculatedPrice,
+            type: 'debit',
+            description: `Survey creation with id:${survey.id} and title: ${survey.title}, ${calculatedPrice}`,
+          },
         });
 
         const section = await tx.section.create({
