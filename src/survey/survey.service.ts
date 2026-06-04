@@ -69,6 +69,19 @@ export class SurveyService {
           },
         });
 
+        await sendEmail({
+          to: user.email,
+          subject: `${calculatedPrice}  Debit notification`,
+          text: `Your survey with title: ${survey.title} has been created successfully and your wallet balance has been debited with ${calculatedPrice}.`,
+        });
+
+        await this.notificationService.create({
+          title: 'Debit Notification',
+          message: `Your survey with title: ${survey.title} has been created successfully and your wallet balance has been debited with ${calculatedPrice}.`,
+          userId,
+          type: 'debit',
+        });
+
         const section = await tx.section.create({
           data: {
             title: `Section 1 for ${survey.title}`,
