@@ -98,13 +98,20 @@ export class SurveyService {
         );
       }
 
-      return tx.survey.findUnique({
-        where: { id: survey.id },
-        include: {
-          surveyInterests: true,
-          sections: { include: { questions: true } },
-        },
-      });
+      // return tx.survey.findUnique({
+      //   where: { id: survey.id },
+      //   include: {
+      //     surveyInterests: true,
+      //     sections: { include: { questions: true } },
+      //   },
+      // });
+      return {
+        ...survey,
+        sections: [{ ...section, questions: questions ?? [] }],
+      };
+    }, {
+      timeout: 15000,
+      maxWait: 5000
     }).catch((error) => {
       console.error('❌ Failed to create survey:', error);
       throw new InternalServerErrorException(`Failed to create survey: ${error.message}`);
