@@ -34,94 +34,99 @@ export class SurveyService {
 
     const calculatedPrice = this.pricingService.calculatePrice(createSurveyDto);
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const wallet = await tx.wallet.findUnique({ where: { userId } });
-        if (!wallet) throw new NotFoundException('Wallet not found');
-        if (wallet.balance < calculatedPrice) throw new BadRequestException('Insufficient points');
+    // ── Transaction: only fast DB writes in here ─────────────────────────────
+    const result = await this.prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({ where: { userId } });
+      if (!wallet) throw new NotFoundException('Wallet not found');
+      if (wallet.balance < calculatedPrice) throw new BadRequestException('Insufficient points');
 
-        await tx.wallet.update({
-          where: { userId },
-          data: { balance: { decrement: calculatedPrice } },
-        });
-
-        const survey = await tx.survey.create({
-          data: {
-            ...surveyData,
-            slug,
-            userId,
-            price: calculatedPrice,
-            audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
-            audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
-            surveyInterests: surveyInterestIds?.length
-              ? { connect: surveyInterestIds.map((id) => ({ id })) }
-              : undefined,
-          },
-          include: { surveyInterests: true },
-        });
-
-        await tx.walletTransaction.create({
-          data: {
-            walletId: wallet.id,
-            amount: -calculatedPrice,
-            type: 'debit',
-            description: `Survey creation with id:${survey.id} and title: ${survey.title}, ${calculatedPrice}`,
-          },
-        });
-
-        await sendEmail({
-          to: user.email,
-          subject: `${calculatedPrice}  Debit notification`,
-          text: `Your survey with title: ${survey.title} has been created successfully and your wallet balance has been debited with ${calculatedPrice}.`,
-        });
-
-        await this.notificationService.create({
-          title: 'Debit Notification',
-          message: `Your survey with title: ${survey.title} has been created successfully and your wallet balance has been debited with ${calculatedPrice}.`,
-          userId,
-          type: 'debit',
-        });
-
-        const section = await tx.section.create({
-          data: {
-            title: `Section 1 for ${survey.title}`,
-            description: 'Default section created with survey',
-            surveyId: survey.id,
-            order: 1,
-          },
-        });
-
-        if (questions?.length) {
-          await Promise.all(
-            questions.map((q) =>
-              tx.question.create({
-                data: {
-                  text: q.text,
-                  type: q.type,
-                  options: q.options ?? [],
-                  scaleMin: q.scaleMin ?? null,
-                  scaleMax: q.scaleMax ?? null,
-                  allowUpload: q.allowUpload ?? false,
-                  sectionId: section.id,
-                  userId,
-                },
-              }),
-            ),
-          );
-        }
-
-        return tx.survey.findUnique({
-          where: { id: survey.id },
-          include: {
-            surveyInterests: true,
-            sections: { include: { questions: true } },
-          },
-        });
+      await tx.wallet.update({
+        where: { userId },
+        data: { balance: { decrement: calculatedPrice } },
       });
-    } catch (error) {
+
+      const survey = await tx.survey.create({
+        data: {
+          ...surveyData,
+          slug,
+          userId,
+          price: calculatedPrice,
+          audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
+          audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+          surveyInterests: surveyInterestIds?.length
+            ? { connect: surveyInterestIds.map((id) => ({ id })) }
+            : undefined,
+        },
+        include: { surveyInterests: true },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          amount: -calculatedPrice,
+          type: 'debit',
+          description: `Survey creation with id:${survey.id} and title: ${survey.title}, ${calculatedPrice}`,
+        },
+      });
+
+      const section = await tx.section.create({
+        data: {
+          title: `Section 1 for ${survey.title}`,
+          description: 'Default section created with survey',
+          surveyId: survey.id,
+          order: 1,
+        },
+      });
+
+      if (questions?.length) {
+        await Promise.all(
+          questions.map((q) =>
+            tx.question.create({
+              data: {
+                text: q.text,
+                type: q.type,
+                options: q.options ?? [],
+                scaleMin: q.scaleMin ?? null,
+                scaleMax: q.scaleMax ?? null,
+                allowUpload: q.allowUpload ?? false,
+                sectionId: section.id,
+                userId,
+              },
+            }),
+          ),
+        );
+      }
+
+      return tx.survey.findUnique({
+        where: { id: survey.id },
+        include: {
+          surveyInterests: true,
+          sections: { include: { questions: true } },
+        },
+      });
+    }).catch((error) => {
       console.error('❌ Failed to create survey:', error);
       throw new InternalServerErrorException(`Failed to create survey: ${error.message}`);
-    }
+    });
+
+    if (!result) throw new NotFoundException('Survey not found after creation');
+
+    // ── Side-effects: run after transaction commits, don't block the response ─
+    // Fire-and-forget — failures here won't roll back the survey
+    sendEmail({
+      to: user.email,
+      subject: `${calculatedPrice} Debit notification`,
+      text: `Your survey "${result.title}" was created successfully. Your wallet was debited ${calculatedPrice} points.`,
+    }).catch((err) => console.error('❌ Email failed:', err));
+
+    this.notificationService.create({
+      title: 'Debit Notification',
+      message: `Your survey "${result.title}" was created successfully. Your wallet was debited ${calculatedPrice} points.`,
+      userId,
+      type: 'debit',
+    }).catch((err) => console.error('❌ Notification failed:', err));
+
+    return result;
   }
 
   async findAll(
