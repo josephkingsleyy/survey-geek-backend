@@ -14,6 +14,7 @@ import { Limit } from 'src/common/utils/app';
 import { sendEmail } from 'src/common/utils/mail-service';
 import { SurveyStatus } from '@prisma/client';
 import { PricingService } from './pricing.service';
+import { buildInvoiceEmail, buildInvoiceLineItems } from './invoice-email.template';
 
 @Injectable()
 export class SurveyService {
@@ -113,10 +114,20 @@ export class SurveyService {
 
     // ── Side-effects: run after transaction commits, don't block the response ─
     // Fire-and-forget — failures here won't roll back the survey
+
+    const lineItems = buildInvoiceLineItems(createSurveyDto);
+    const htmlBody = buildInvoiceEmail({
+      surveyTitle: result?.title ?? "untitle survey",
+      surveyId: result?.id,
+      userEmail: user?.email,
+      lineItems,
+      total: calculatedPrice,
+    });
     sendEmail({
       to: user.email,
-      subject: `${calculatedPrice} Debit notification`,
+      subject: `Invoice – ${result.title} (${calculatedPrice.toLocaleString()} pts deducted)`,
       text: `Your survey "${result.title}" was created successfully. Your wallet was debited ${calculatedPrice} points.`,
+      html: htmlBody,
     }).catch((err) => console.error('❌ Email failed:', err));
 
     this.notificationService.create({
