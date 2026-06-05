@@ -12,8 +12,9 @@ export class PricingService {
         // ------------------------
         const responses = Number(data.minResponse || 0);
 
-        const audienceConfig =
-            PRICING_CONFIG.targetAudience[data.targetAudience as any];
+        // Normalize to lowercase so "General" matches "general" in the config
+        const audienceKey = (data.targetAudience?.toLowerCase().trim() || 'general') as keyof typeof PRICING_CONFIG.targetResponse;
+        const audienceConfig = PRICING_CONFIG.targetResponse[audienceKey];
 
         if (audienceConfig) {
             const tier = audienceConfig.rates.find(r => responses <= r.max);
@@ -23,30 +24,45 @@ export class PricingService {
         // ------------------------
         // 2. Timeline
         // ------------------------
-        price += PRICING_CONFIG.timeline[data.timeline as any] ?? 0;
+        const timelineKey = data.timeline?.toLowerCase().trim() as keyof typeof PRICING_CONFIG.timeline;
+        price += PRICING_CONFIG.timeline[timelineKey] ?? 0;
 
         // ------------------------
         // 3. Mode of Collection
         // ------------------------
-        price += PRICING_CONFIG.modeOfCollection[data.modeOfCollection as any] ?? 0;
+        const modeKey = data.modeOfCollection?.toLowerCase().trim() as keyof typeof PRICING_CONFIG.modeOfCollection;
+        price += PRICING_CONFIG.modeOfCollection[modeKey] ?? 0;
 
         // ------------------------
         // 4. Questions
+        // Handle plain numbers, ranges like "1-10" (use upper bound), and "40+"
         // ------------------------
-        const questionCount = Number(data.questionNumber || 0);
+
+        const parseQuestionCount = (value: string | number): number => {
+            if (!value) return 0;
+            if (typeof value === "number") return value;
+            if (value.includes("+")) return Number(value.replace("+", ""));
+            if (value.includes("-")) {
+                const [, max] = value.split("-");
+                return Number(max);
+            }
+            return Number(value);
+        };
+        const questionCount = parseQuestionCount(data.questionNumber || 0);
 
         const questionTier = PRICING_CONFIG.questionBase.tiers.find(
             t => questionCount <= t.max,
         );
 
         price += (questionTier?.fee || 0);
-        price += questionCount * PRICING_CONFIG.questionBase.perQuestion;
 
         // ------------------------
         // 5. Support Package
         // ------------------------
-        price += PRICING_CONFIG.support[data.support as any] ?? 0;
+        const supportKey = data.support?.toLowerCase().trim() as keyof typeof PRICING_CONFIG.support;
+        price += PRICING_CONFIG.support[supportKey] ?? 0;
 
-        return price;
+        // Round to integer — wallet.points is an Int field in Prisma
+        return Math.round(price);
     }
 }

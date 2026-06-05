@@ -29,7 +29,7 @@ export const sendEmail = async ({
       text,
       html,
     });
-    console.log(`✅ Email sent to ${to}`);
+    // console.log(`✅ Email sent to ${to}`);
   } catch (error) {
     console.error('❌ Error sending email:', error);
     throw error;

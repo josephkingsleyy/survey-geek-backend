@@ -33,6 +33,15 @@ export class SurveyService {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
     const slug = Array.from({ length: 12 }, () => charset.charAt(Math.floor(Math.random() * charset.length))).join('');
 
+    // 🔍 Debug: log the raw pricing fields so you can verify they match config keys
+    // console.log('[PricingDebug]', {
+    //   targetAudience: createSurveyDto.targetAudience,
+    //   minResponse: createSurveyDto.minResponse,
+    //   timeline: createSurveyDto.timeline,
+    //   modeOfCollection: createSurveyDto.modeOfCollection,
+    //   questionNumber: createSurveyDto.questionNumber,
+    //   support: createSurveyDto.support,
+    // });
     const calculatedPrice = this.pricingService.calculatePrice(createSurveyDto);
 
     // ── Transaction: only fast DB writes in here ─────────────────────────────
@@ -98,13 +107,6 @@ export class SurveyService {
         );
       }
 
-      // return tx.survey.findUnique({
-      //   where: { id: survey.id },
-      //   include: {
-      //     surveyInterests: true,
-      //     sections: { include: { questions: true } },
-      //   },
-      // });
       return {
         ...survey,
         sections: [{ ...section, questions: questions ?? [] }],

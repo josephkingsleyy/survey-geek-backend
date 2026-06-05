@@ -1,11 +1,11 @@
 export const PRICING_CONFIG = {
-    targetAudience: {
+    targetResponse: {
         general: {
             rates: [
                 { max: 100, rate: 50 },
                 { max: 500, rate: 45 },
                 { max: 1000, rate: 40 },
-                { max: Infinity, rate: 35 },
+                { max: Infinity, rate: 30 },
             ],
         },
         specific: {
@@ -19,10 +19,10 @@ export const PRICING_CONFIG = {
     },
 
     timeline: {
-        standard: 3000,
-        fast: 7000,
-        urgent: 12000,
-        open: 0,
+        standard: 42000,
+        fast: 49000,
+        urgent: 50000,
+        open: 2000,
     },
 
     modeOfCollection: {
@@ -32,11 +32,10 @@ export const PRICING_CONFIG = {
     },
 
     questionBase: {
-        perQuestion: 50,
         tiers: [
             { max: 10, fee: 5000 },
             { max: 20, fee: 10000 },
-            { max: 40, fee: 15000 },
+            { max: 40, fee: 20000 },
             { max: Infinity, fee: 20000 },
         ],
     },
