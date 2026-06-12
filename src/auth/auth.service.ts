@@ -86,6 +86,7 @@ export class AuthService {
   }
 
   async login(dto: LoginAuthDto, data: { ip: string; userAgent: string }) {
+    console.log('endpoint hit login')
     try {
       const user = await this.prisma.user.findUnique({
         where: { email: dto.email, softDelete: false },
