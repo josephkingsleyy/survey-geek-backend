@@ -369,6 +369,7 @@ enum QuestionStatus {
 
 enum QuestionType {
   TEXT
+  LONG_TEXT
   SINGLE_CHOICE
   MULTIPLE_CHOICE
   RATING
