@@ -24,7 +24,52 @@ export class SurveyService {
     private readonly pricingService: PricingService,
   ) { }
 
+  private async validateAndProcessAudienceAndInterests(
+    dto: any
+  ) {
+    if (dto.targetAudience === 'specific') {
+      // Specific audience:
+      // - Clear interests
+      dto.surveyInterestIds = [];
+
+      // - Validate that audienceOccupation, audienceState, timeline, modeOfCollection, questionNumber are present
+      if (!dto.audienceOccupation || (Array.isArray(dto.audienceOccupation) && dto.audienceOccupation.length === 0) || dto.audienceOccupation === "") {
+        throw new BadRequestException('Occupation is required for specific audience');
+      }
+      if (!dto.audienceState || (Array.isArray(dto.audienceState) && dto.audienceState.length === 0) || dto.audienceState === "") {
+        throw new BadRequestException('State is required for specific audience');
+      }
+      if (!dto.timeline) {
+        throw new BadRequestException('Timeline is required for specific audience');
+      }
+      if (!dto.modeOfCollection) {
+        throw new BadRequestException('Mode of collection is required for specific audience');
+      }
+      if (!dto.questionNumber) {
+        throw new BadRequestException('Question count is required for specific audience');
+      }
+    } else {
+      // General audience (or general is default)
+      // - Validate that we have at least one interest and at most 3
+      if (!dto.surveyInterestIds || !Array.isArray(dto.surveyInterestIds) || dto.surveyInterestIds.length === 0) {
+        throw new BadRequestException('At least one interest is required for a general audience survey');
+      }
+      if (dto.surveyInterestIds.length > 3) {
+        throw new BadRequestException('Maximum of 3 interests allowed');
+      }
+
+      // - Clear target specific fields
+      dto.audienceOccupation = null;
+      dto.audienceState = null;
+      dto.timeline = null;
+      dto.modeOfCollection = null;
+      dto.questionNumber = null;
+      dto.support = null;
+    }
+  }
+
   async create(createSurveyDto: CreateSurveyDto, userId: number) {
+    await this.validateAndProcessAudienceAndInterests(createSurveyDto);
     const { questions, surveyInterestIds, audienceOccupation, audienceState, ...surveyData } = createSurveyDto;
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -61,8 +106,8 @@ export class SurveyService {
           slug,
           userId,
           price: calculatedPrice,
-          audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
-          audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+          audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
+          audienceState: audienceState ? JSON.stringify(audienceState) : null,
           surveyInterests: surveyInterestIds?.length
             ? { connect: surveyInterestIds.map((id) => ({ id })) }
             : undefined,
@@ -688,20 +733,48 @@ export class SurveyService {
   }
 
   async update(id: string, updateSurveyDto: UpdateSurveyDto) {
+    await this.validateAndProcessAudienceAndInterests(updateSurveyDto);
     const { sections, audienceOccupation, audienceState, surveyInterestIds, maxResponse, price, ...surveyData } = updateSurveyDto;
     try {
-      const updatedSurvey = await this.prisma.survey.update({
+      const existingSurvey = await this.prisma.survey.findUnique({
         where: isNaN(Number(id)) ? { slug: id } : { id: Number(id) },
+        include: { surveyInterests: true },
+      });
+      if (!existingSurvey) throw new NotFoundException('Survey not found');
+
+      const updatedSurvey = await this.prisma.survey.update({
+        where: { id: existingSurvey.id },
         data: {
           ...surveyData,
-          audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
-          audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+          audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
+          audienceState: audienceState ? JSON.stringify(audienceState) : null,
           price: price !== undefined ? parseFloat(price as string) : undefined,
         },
         include: {
           user: true,
+          surveyInterests: true,
         }
       });
+
+      if (surveyInterestIds) {
+        const existingIds = existingSurvey.surveyInterests.map((i) => i.id);
+        const toConnect = surveyInterestIds.filter((x) => !existingIds.includes(x)).map((id) => ({ id }));
+        const toDisconnect = existingIds.filter((x) => !surveyInterestIds.includes(x)).map((id) => ({ id }));
+        const reUpdatedSurvey = await this.prisma.survey.update({
+          where: { id: existingSurvey.id },
+          data: {
+            surveyInterests: {
+              connect: toConnect,
+              disconnect: toDisconnect,
+            },
+          },
+          include: {
+            user: true,
+            surveyInterests: true,
+          }
+        });
+        Object.assign(updatedSurvey, reUpdatedSurvey);
+      }
       if (updateSurveyDto.status === "PUBLISHED") {
         if (updatedSurvey?.user?.email) {
           await sendEmail({
@@ -710,16 +783,78 @@ export class SurveyService {
             text: `Your survey "${updatedSurvey.title}" has been approved and published.`,
           });
         }
-        const users = await this.prisma.user.findMany({
-          select: { id: true },
-        });
-        const userIds = users.map((u) => u.id);
 
-        await this.notificationService.broadcast(userIds, {
-          title: 'New Survey Available',
-          message: `A new survey "${updatedSurvey.title}" was just published.`,
-          type: 'survey',
-        });
+        let userIds: number[] = [];
+
+        if (updatedSurvey.targetAudience === 'specific') {
+          // Specific Audience: matches occupation and stateOfResidence
+          let targetedStates: string[] = [];
+          let targetedOccupations: string[] = [];
+
+          try {
+            if (updatedSurvey.audienceState) {
+              const parsed = JSON.parse(updatedSurvey.audienceState);
+              targetedStates = Array.isArray(parsed) ? parsed.map(s => s.toLowerCase().trim()) : [parsed.toLowerCase().trim()];
+            }
+          } catch {
+            if (updatedSurvey.audienceState) {
+              targetedStates = [updatedSurvey.audienceState.toLowerCase().trim()];
+            }
+          }
+
+          try {
+            if (updatedSurvey.audienceOccupation) {
+              const parsed = JSON.parse(updatedSurvey.audienceOccupation);
+              targetedOccupations = Array.isArray(parsed) ? parsed.map(o => o.toLowerCase().trim()) : [parsed.toLowerCase().trim()];
+            }
+          } catch {
+            if (updatedSurvey.audienceOccupation) {
+              targetedOccupations = [updatedSurvey.audienceOccupation.toLowerCase().trim()];
+            }
+          }
+
+          const allUsers = await this.prisma.user.findMany({
+            select: {
+              id: true,
+              stateOfResidence: true,
+              occupation: true,
+            }
+          });
+
+          userIds = allUsers.filter(u => {
+            const userState = u.stateOfResidence?.toLowerCase().trim();
+            const userOcc = u.occupation?.toLowerCase().trim();
+
+            const stateMatches = targetedStates.length === 0 || (userState && targetedStates.includes(userState));
+            const occMatches = targetedOccupations.length === 0 || (userOcc && targetedOccupations.includes(userOcc));
+
+            return stateMatches && occMatches;
+          }).map(u => u.id);
+
+        } else {
+          // General Audience: matches users whose profile interests include any of the survey's selected interests
+          const interestIds = updatedSurvey.surveyInterests.map(i => i.id);
+
+          const users = await this.prisma.user.findMany({
+            where: {
+              surveyInterest: {
+                some: {
+                  id: { in: interestIds }
+                }
+              }
+            },
+            select: { id: true }
+          });
+          userIds = users.map((u) => u.id);
+        }
+
+        if (userIds.length > 0) {
+          await this.notificationService.broadcast(userIds, {
+            title: 'New Survey Available',
+            message: `A new survey "${updatedSurvey.title}" was just published.`,
+            type: 'survey',
+          });
+        }
       };
 
       if (updateSurveyDto.status === "PENDING") {
@@ -760,6 +895,7 @@ export class SurveyService {
   }
 
   async updateWithQuestionOld(id: number, dto: UpdateSurveyDto) {
+    await this.validateAndProcessAudienceAndInterests(dto);
     const { sections, surveyInterestIds, audienceOccupation, audienceState, maxResponse, price, ...surveyData } = dto;
 
     // 1️⃣ Ensure survey exists
@@ -777,8 +913,8 @@ export class SurveyService {
       where: { id },
       data: {
         ...surveyData,
-        audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
-        audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+        audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
+        audienceState: audienceState ? JSON.stringify(audienceState) : null,
         price: price !== undefined ? parseFloat(price as string) : undefined,
       },
     });
@@ -883,6 +1019,7 @@ export class SurveyService {
   }
 
   async updateWithQuestion(id: number, dto: UpdateSurveyDto) {
+    await this.validateAndProcessAudienceAndInterests(dto);
     const { sections, surveyInterestIds, audienceOccupation, audienceState, maxResponse, price, ...surveyData } = dto;
 
     // 1️⃣ Ensure survey exists
@@ -898,8 +1035,8 @@ export class SurveyService {
       where: { id },
       data: {
         ...surveyData,
-        audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : undefined,
-        audienceState: audienceState ? JSON.stringify(audienceState) : undefined,
+        audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
+        audienceState: audienceState ? JSON.stringify(audienceState) : null,
         price: price !== undefined ? parseFloat(price as string) : undefined,
       },
     });

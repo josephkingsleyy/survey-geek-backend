@@ -23,6 +23,14 @@ export class SurveyInterestService {
   }
 
   async findAll() {
+    const general = await this.prisma.surveyInterest.findUnique({
+      where: { name: 'General Interest' },
+    });
+    if (!general) {
+      await this.prisma.surveyInterest.create({
+        data: { name: 'General Interest' },
+      });
+    }
     return this.prisma.surveyInterest.findMany();
   }
 

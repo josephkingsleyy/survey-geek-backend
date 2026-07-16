@@ -27,7 +27,7 @@ async function main() {
 
   // 2️⃣ SURVEY INTERESTS
 
-  const interests = ['Technology', 'Health', 'Finance', 'Education', 'Sports'];
+  const interests = ['Technology', 'Health', 'Finance', 'Education', 'Sports', 'General Interest'];
   // const createdInterests = [];
   const createdInterests: Awaited<ReturnType<typeof prisma.surveyInterest.create>>[] = [];
   for (const name of interests) {
