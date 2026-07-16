@@ -150,4 +150,8 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsInt()
   order?: number;
+
+  @IsOptional()
+  @IsString()
+  branchCondition?: string;
 }

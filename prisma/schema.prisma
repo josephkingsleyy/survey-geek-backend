@@ -1,15 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // or "mysql" | "sqlite" | "sqlserver"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -26,26 +20,25 @@ model Billing {
 model Wallet {
   id           Int                 @id @default(autoincrement())
   userId       Int                 @unique
-  user         User                @relation(fields: [userId], references: [id])
-  balance      Float               @default(0) // Real money
-  points       Int                 @default(0) // Virtual points
+  balance      Float               @default(0)
+  points       Int                 @default(0)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
+  user         User                @relation(fields: [userId], references: [id])
   transactions WalletTransaction[]
 }
 
 model WalletTransaction {
-  id       Int          @id @default(autoincrement())
-  walletId Int
-  wallet   Wallet       @relation(fields: [walletId], references: [id])
-  type     String // "credit" | "debit" | "points_earn" | "points_spend"
-  amount   Float? // For money
-  points   Int? // For points
-  event    RewardEvent?
-
+  id          Int          @id @default(autoincrement())
+  walletId    Int
+  type        String
+  amount      Float?
+  points      Int?
   description String?
-  reference   String?  @unique
-  createdAt   DateTime @default(now())
+  reference   String?      @unique
+  createdAt   DateTime     @default(now())
+  event       RewardEvent?
+  wallet      Wallet       @relation(fields: [walletId], references: [id])
 
   @@index([walletId])
 }
@@ -68,50 +61,27 @@ model Payment {
 model SurveyInterest {
   id      Int      @id @default(autoincrement())
   name    String   @unique
-  User    User[]   @relation("UserInterests")
   surveys Survey[] @relation("SurveyInterests")
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-enum TicketPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
+  User    User[]   @relation("UserInterests")
 }
 
 model Ticket {
-  id          Int     @id @default(autoincrement())
-  title       String
-  description String?
-
-  // Status & Priority
-  status   TicketStatus   @default(OPEN)
-  priority TicketPriority @default(MEDIUM)
-
-  // Categorization
+  id             Int            @id @default(autoincrement())
+  title          String
+  description    String?
+  status         TicketStatus   @default(OPEN)
+  priority       TicketPriority @default(MEDIUM)
   category       String?
   resolutionNote String?
-
-  // Timestamps
-  resolvedAt DateTime?
-  closedAt   DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  // Relations
-  userId       Int // creator (required)
-  assignedToId Int? // agent/admin handling it
-
-  user        User   @relation("CreatedTickets", fields: [userId], references: [id])
-  assignedTo  User?  @relation("AssignedTickets", fields: [assignedToId], references: [id])
-  attachments File[] // one-to-many
+  resolvedAt     DateTime?
+  closedAt       DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  userId         Int
+  assignedToId   Int?
+  attachments    File[]
+  assignedTo     User?          @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  user           User           @relation("CreatedTickets", fields: [userId], references: [id])
 
   @@index([userId])
   @@index([assignedToId])
@@ -121,11 +91,11 @@ model File {
   id        Int      @id @default(autoincrement())
   url       String
   filename  String
-  ticketId  Int? // optional foreign key; file may exist before being linked
-  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
+  ticketId  Int?
   createdAt DateTime @default(now())
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
 
-  @@index([ticketId]) // index for faster queries on ticket
+  @@index([ticketId])
 }
 
 model User {
@@ -134,20 +104,10 @@ model User {
   emailVerifiedAt              DateTime?
   password                     String?
   username                     String?
-  phoneNumberDialCode          String?
   phoneNumber                  String?
-  alternatePhoneNumberDialCode String?
   alternatePhoneNumber         String?
-  countryOfResidence           String?
-  countryOfNationality         String?
-  stateOfNationality           String?
-  stateOfResidence             String?
-  cityOfResidence              String?
-  cityOfNationality            String?
-  addressOfResidence           String?
-  addressOfNationality         String?
-  employmentStatus             String? //enum
-  mostPreferredCommsChannel    String? //enum
+  employmentStatus             String?
+  mostPreferredCommsChannel    String?
   howYouGotToKnowUs            String?
   profilePhoto                 String?
   dob                          DateTime?
@@ -170,34 +130,38 @@ model User {
   softDelete                   Boolean?         @default(false)
   firstName                    String?
   lastName                     String?
-  provider                     String?
-  providerId                   String?
   hasOnboarded                 Boolean?
   createdAt                    DateTime         @default(now())
-  payment                      Payment[]
-  billing                      Billing?
+  resetOtp                     String?
+  resetOtpExpiresAt            DateTime?
   ageGroup                     String?
+  addressOfNationality         String?
+  addressOfResidence           String?
+  alternatePhoneNumberDialCode String?
+  cityOfNationality            String?
+  cityOfResidence              String?
+  countryOfNationality         String?
+  countryOfResidence           String?
+  phoneNumberDialCode          String?
+  stateOfNationality           String?
+  stateOfResidence             String?
+  provider                     String?
+  providerId                   String?
+  accounts                     Account[]
+  billing                      Billing?
+  Notification                 Notification[]
+  payment                      Payment[]
+  questions                    Question[]
+  referralUsed                 Referral?        @relation("UserReferred")
+  referralsMade                Referral[]       @relation("UserReferrals")
+  responses                    Response[]
+  sessions                     Session[]
+  surveys                      Survey[]
+  assignedTickets              Ticket[]         @relation("AssignedTickets")
+  createdTickets               Ticket[]         @relation("CreatedTickets")
+  wallet                       Wallet?
+  Withdrawal                   Withdrawal[]
   surveyInterest               SurveyInterest[] @relation("UserInterests")
-
-  createdTickets  Ticket[] @relation("CreatedTickets") // tickets created by the user
-  assignedTickets Ticket[] @relation("AssignedTickets") // tickets assigned to the user
-
-  surveys      Survey[] // surveys created by the user
-  responses    Response[] // responses submitted by the user
-  Notification Notification[]
-  questions    Question[]
-
-  resetOtp          String? // temporary OTP
-  resetOtpExpiresAt DateTime? // OTP expiry
-  wallet            Wallet?
-
-  referralsMade Referral[]   @relation("UserReferrals")
-  referralUsed  Referral?    @relation("UserReferred")
-  Withdrawal    Withdrawal[]
-
-  // OAuth relations
-  accounts Account[]
-  sessions Session[]
 }
 
 model Account {
@@ -213,8 +177,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -232,138 +195,176 @@ model Session {
   sessionToken String   @unique
   userId       Int
   expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-enum SurveyStatus {
-  DRAFT // Created, editable, not visible
-  PUBLISHED // Live and collecting responses
-  PAUSED // Temporarily stopped
-  COMPLETED // Closed after responses or deadline
-  PENDING // Old but kept for records
-  TRASH // Soft-deleted
-  REJECTED // rejected
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Survey {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  title           String?
-  description     String?
-  surveyPurpose   String?
-  status          SurveyStatus @default(DRAFT)
-  requireResponse Boolean?     @default(false)
-  minResponse     Int?
-  startDate       DateTime?
-  endDate         DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  slug            String?      @unique
-
-  sections           Section[]  @relation("SurveySections")
-  responses          Response[]
+  id                 Int              @id @default(autoincrement())
+  userId             Int
+  title              String?
+  description        String?
+  status             SurveyStatus     @default(DRAFT)
+  requireResponse    Boolean?         @default(false)
+  minResponse        Int?
+  startDate          DateTime?
+  endDate            DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  surveyPurpose      String?
+  slug               String?          @unique
   rejectionReason    String?
-  targetAudience     String?
   audienceOccupation String?
   audienceState      String?
-  timeline           String?
-  questionNumber     String?
   modeOfCollection   String?
+  questionNumber     String?
   support            String?
+  targetAudience     String?
+  timeline           String?
   price              Float?
-
-  surveyInterests SurveyInterest[] @relation("SurveyInterests")
+  responses          Response[]
+  sections           Section[]        @relation("SurveySections")
+  user               User             @relation(fields: [userId], references: [id])
+  surveyInterests    SurveyInterest[] @relation("SurveyInterests")
 }
 
 model Section {
-  id       Int    @id @default(autoincrement())
-  surveyId Int
-  survey   Survey @relation("SurveySections", fields: [surveyId], references: [id])
-
+  id          Int        @id @default(autoincrement())
+  surveyId    Int
   title       String
   description String?
-  order       Int? // optional ordering within a survey
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  order       Int?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  questions   Question[] @relation("SectionQuestions")
+  survey      Survey     @relation("SurveySections", fields: [surveyId], references: [id])
+}
 
-  questions Question[] @relation("SectionQuestions")
+model Question {
+  id              Int            @id @default(autoincrement())
+  sectionId       Int
+  description     String?
+  text            String
+  type            QuestionType
+  required        Boolean        @default(false)
+  scaleMin        Int?
+  scaleMax        Int?
+  allowUpload     Boolean?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          Int?
+  order           Int?
+  options         Json           @default("[]")
+  levels          Int?           @default(5)
+  symbol          String?        @default("star")
+  statements      Json?          @default("[]")
+  maxFiles        Int?           @default(1)
+  maxSize         Int?           @default(2048)
+  uploadedFiles   Json?          @default("[]")
+  matrixId        Int?           @unique
+  status          QuestionStatus @default(DRAFT)
+  branchCondition String?
+  matrix          MatrixField?   @relation(fields: [matrixId], references: [id])
+  section         Section        @relation("SectionQuestions", fields: [sectionId], references: [id])
+  user            User?          @relation(fields: [userId], references: [id])
+  responses       Response[]
+}
+
+model MatrixField {
+  id       Int       @id @default(autoincrement())
+  operator String
+  rows     String[]
+  cols     String[]
+  data     Json
+  question Question?
+}
+
+model Response {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  surveyId      Int
+  questionId    Int
+  answerText    String?
+  rating        Int?
+  uploadUrl     String?
+  matrixRow     String?
+  matrixCol     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  answerOption  Json?
+  answerOptions Json?
+  matrixAnswer  Json?
+  question      Question @relation(fields: [questionId], references: [id])
+  survey        Survey   @relation(fields: [surveyId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, questionId])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  message     String
+  type        String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  isImportant Boolean? @default(false)
+  isStarred   Boolean? @default(false)
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Referral {
+  id           Int      @id @default(autoincrement())
+  referrerId   Int
+  referredId   Int      @unique
+  pointsEarned Int      @default(0)
+  createdAt    DateTime @default(now())
+  referred     User     @relation("UserReferred", fields: [referredId], references: [id])
+  referrer     User     @relation("UserReferrals", fields: [referrerId], references: [id])
+
+  @@index([referrerId])
+}
+
+model Withdrawal {
+  id            Int    @id @default(autoincrement())
+  userId        Int
+  amount        Float
+  bankName      String
+  accountNumber String
+  accountName   String
+  status        String
+  approvedBy    Int?
+  declinedBy    Int?
+  user          User   @relation(fields: [userId], references: [id])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  COMPLETED
+  PENDING
+  TRASH
+  REJECTED
 }
 
 enum QuestionStatus {
   DRAFT
   PUBLISH
-}
-
-model Question {
-  id          Int     @id @default(autoincrement())
-  sectionId   Int
-  section     Section @relation("SectionQuestions", fields: [sectionId], references: [id])
-  description String?
-
-  text          String
-  type          QuestionType // TEXT, SINGLE_CHOICE, MULTIPLE_CHOICE, RATING, etc.
-  options       Json         @default("[]")
-  required      Boolean      @default(false)
-  scaleMin      Int? // for NPS, Likert, Rating
-  scaleMax      Int? // e.g. 1–5 or 1–10
-  allowUpload   Boolean? // for Upload questions
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  userId        Int?
-  user          User?        @relation(fields: [userId], references: [id])
-  order         Int?
-  symbol        String?      @default("star") // emoji or icon identifier
-  levels        Int?         @default(5)
-  statements    Json?        @default("[]")
-  maxFiles      Int?         @default(1)
-  uploadedFiles Json?        @default("[]") // store array of file metadata
-  maxSize       Int?         @default(2048) // in kilobytes (2MB default)
-  matrix        MatrixField? @relation(fields: [matrixId], references: [id])
-  matrixId      Int?         @unique
-
-  responses Response[]
-  status    QuestionStatus @default(DRAFT)
-}
-
-model MatrixField {
-  id Int @id @default(autoincrement())
-
-  operator String // "add" | "subtract" | "multiply" | "divide"
-
-  rows String[] // e.g ["Row 1", "Row 2", ...]
-  cols String[] // e.g ["Col 1", "Col 2"]
-  data Json // e.g [["1","2"],["3","4"]]
-
-  // Back relation
-  question Question?
-}
-
-model Response {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  surveyId Int
-  survey   Survey @relation(fields: [surveyId], references: [id])
-
-  questionId Int
-  question   Question @relation(fields: [questionId], references: [id])
-
-  answerText    String? // for TEXT answers
-  answerOption  Json? // for SINGLE_CHOICE
-  answerOptions Json? // for MULTIPLE_CHOICE
-  rating        Int? // for RATING, Likert, NPS
-  uploadUrl     String? // for uploads
-  matrixRow     String? // for Matrix questions
-  matrixCol     String? // for Matrix questions
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  matrixAnswer  Json?
-
-  @@unique([userId, questionId])
 }
 
 enum QuestionType {
@@ -380,49 +381,10 @@ enum QuestionType {
   TIME
 }
 
-model Notification {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  title       String
-  message     String
-  type        String // e.g., "payment", "survey", "system"
-  read        Boolean  @default(false)
-  isStarred   Boolean? @default(false)
-  isImportant Boolean? @default(false)
-  createdAt   DateTime @default(now())
-}
-
-model Referral {
-  id           Int      @id @default(autoincrement())
-  referrerId   Int
-  referredId   Int      @unique
-  pointsEarned Int      @default(0)
-  createdAt    DateTime @default(now())
-
-  referrer User @relation("UserReferrals", fields: [referrerId], references: [id])
-  referred User @relation("UserReferred", fields: [referredId], references: [id])
-
-  @@index([referrerId])
-}
-
 enum RewardEvent {
   REFERRAL_SIGNUP
   SURVEY_PUBLISH
   SURVEY_RESPONSE
   ADMIN_ADJUSTMENT
   POINTS_PURCHASE
-}
-
-model Withdrawal {
-  id            Int    @id @default(autoincrement())
-  userId        Int
-  amount        Float
-  bankName      String
-  accountNumber String
-  accountName   String
-  status        String // 'pending', 'approved', 'declined'
-  approvedBy    Int? // User ID of the approver
-  declinedBy    Int? // User ID of the decliner
-  user          User   @relation(fields: [userId], references: [id])
 }
