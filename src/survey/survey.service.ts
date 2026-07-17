@@ -147,6 +147,9 @@ export class SurveyService {
                 allowTime: q.allowTime ?? false,
                 allowedRange: q.allowedRange ?? null,
                 timeFormat: q.timeFormat ?? '24_HOUR',
+                levels: q.levels ?? 5,
+                symbol: q.symbol ?? 'star',
+                statements: q.statements ?? [],
                 sectionId: section.id,
                 userId,
               },
@@ -998,6 +1001,9 @@ export class SurveyService {
                   allowTime: q.allowTime ?? false,
                   allowedRange: q.allowedRange ?? null,
                   timeFormat: q.timeFormat ?? '24_HOUR',
+                  levels: q.levels ?? 5,
+                  symbol: q.symbol ?? 'star',
+                  statements: q.statements ?? [],
                 },
               });
             } else {
@@ -1014,6 +1020,9 @@ export class SurveyService {
                   allowTime: q.allowTime ?? false,
                   allowedRange: q.allowedRange ?? null,
                   timeFormat: q.timeFormat ?? '24_HOUR',
+                  levels: q.levels ?? 5,
+                  symbol: q.symbol ?? 'star',
+                  statements: q.statements ?? [],
                 },
               });
             }

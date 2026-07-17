@@ -50,6 +50,18 @@ export class CreateQuestionAlongDto {
   @IsOptional()
   @IsString()
   timeFormat?: string;
+
+  @IsOptional()
+  @IsInt()
+  levels?: number;
+
+  @IsOptional()
+  @IsString()
+  symbol?: string;
+
+  @IsOptional()
+  @IsArray()
+  statements?: any[];
 }
 
 export class CreateSurveyDto {

@@ -68,6 +68,18 @@ class UpdateQuestionDto {
   timeFormat?: string;
 
   @IsOptional()
+  @IsInt()
+  levels?: number;
+
+  @IsOptional()
+  @IsString()
+  symbol?: string;
+
+  @IsOptional()
+  @IsArray()
+  statements?: any[];
+
+  @IsOptional()
   @IsString()
   targetAudience?: string;
 
