@@ -1011,6 +1011,12 @@ export class SurveyService {
                   levels: q.levels ?? 5,
                   symbol: q.symbol ?? 'star',
                   statements: q.statements ?? [],
+                  description: q.description ?? null,
+                  maxFiles: q.maxFiles ?? 1,
+                  maxSize: q.maxSize ?? 2048,
+                  uploadedFiles: q.uploadedFiles ?? [],
+                  order: q.order ?? 1,
+                  branchCondition: q.branchCondition ?? null,
                 },
               });
             } else {
@@ -1030,6 +1036,12 @@ export class SurveyService {
                   levels: q.levels ?? 5,
                   symbol: q.symbol ?? 'star',
                   statements: q.statements ?? [],
+                  description: q.description ?? null,
+                  maxFiles: q.maxFiles ?? 1,
+                  maxSize: q.maxSize ?? 2048,
+                  uploadedFiles: q.uploadedFiles ?? [],
+                  order: q.order ?? 1,
+                  branchCondition: q.branchCondition ?? null,
                 },
               });
             }
