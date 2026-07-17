@@ -250,7 +250,7 @@ model Question {
   scaleMax        Int?
   allowUpload     Boolean?
   allowTime       Boolean?       @default(false)
-  allowedRange    String?        @default("FUTURE_ONLY")
+  allowedRange    String?        @default("ANY_DATE")
   timeFormat      String?        @default("24_HOUR")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
