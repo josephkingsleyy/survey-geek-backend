@@ -246,8 +246,8 @@ model Question {
   text            String
   type            QuestionType
   required        Boolean        @default(false)
-  scaleMin        Int?
-  scaleMax        Int?
+  scaleMin        String?
+  scaleMax        String?
   allowUpload     Boolean?
   allowTime       Boolean?       @default(false)
   allowedRange    String?        @default("ANY_DATE")

@@ -97,12 +97,12 @@ export class CreateQuestionDto {
   statements?: StatementsDto[];
 
   @IsOptional()
-  @IsInt()
-  scaleMin?: number;
+  @IsString()
+  scaleMin?: string;
 
   @IsOptional()
-  @IsInt()
-  scaleMax?: number;
+  @IsString()
+  scaleMax?: string;
 
   @IsOptional()
   @IsBoolean()

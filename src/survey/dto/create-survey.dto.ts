@@ -24,12 +24,12 @@ export class CreateQuestionAlongDto {
   options?: any[];
 
   @IsOptional()
-  @IsInt()
-  scaleMin?: number;
+  @IsString()
+  scaleMin?: string;
 
   @IsOptional()
-  @IsInt()
-  scaleMax?: number;
+  @IsString()
+  scaleMax?: string;
 
   @IsInt()
   userId?: number;

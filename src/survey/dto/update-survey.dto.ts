@@ -51,12 +51,12 @@ class UpdateQuestionDto {
   description?: string;
 
   @IsOptional()
-  @IsInt()
-  scaleMin?: number;
+  @IsString()
+  scaleMin?: string;
 
   @IsOptional()
-  @IsInt()
-  scaleMax?: number;
+  @IsString()
+  scaleMax?: string;
 
   @IsOptional()
   allowTime?: boolean;
