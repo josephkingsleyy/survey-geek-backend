@@ -1161,7 +1161,14 @@ export class SurveyService {
     return this.prisma.survey.findUnique({
       where: { id: surveyId },
       include: {
-        sections: { orderBy: { order: 'asc' }, include: { questions: true } },
+        sections: {
+          orderBy: { order: 'asc' },
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
       },
     });
   }
