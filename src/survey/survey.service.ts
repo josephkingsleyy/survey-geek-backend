@@ -415,8 +415,11 @@ export class SurveyService {
         take: limit,
         include: {
           sections: {
+            orderBy: { order: 'asc' },
             include: {
-              questions: true, // ✅ nested inside sections
+              questions: {
+                orderBy: { order: 'asc' },
+              },
             },
           },
           responses: true,
@@ -1130,7 +1133,14 @@ export class SurveyService {
       where: { id },
       include: {
         surveyInterests: true,
-        sections: { include: { questions: true } },
+        sections: {
+          orderBy: { order: 'asc' },
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
       },
     });
   }
