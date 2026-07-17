@@ -21,8 +21,7 @@ export class CreateQuestionAlongDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  options?: string[];
+  options?: any[];
 
   @IsOptional()
   @IsInt()
@@ -59,9 +58,38 @@ export class CreateQuestionAlongDto {
   @IsString()
   symbol?: string;
 
+  statements?: any[];
+
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsInt()
+  maxFiles?: number;
+
+  @IsOptional()
+  @IsInt()
+  maxSize?: number;
+
   @IsOptional()
   @IsArray()
-  statements?: any[];
+  uploadedFiles?: any[];
+
+  @IsOptional()
+  matrix?: any;
+
+  @IsOptional()
+  @IsInt()
+  order?: number;
+
+  @IsOptional()
+  @IsString()
+  branchCondition?: string;
 }
 
 export class CreateSurveyDto {

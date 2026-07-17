@@ -103,6 +103,29 @@ class UpdateQuestionDto {
 
   @IsOptional()
   price?: string[];
+
+  @IsOptional()
+  @IsInt()
+  maxFiles?: number;
+
+  @IsOptional()
+  @IsInt()
+  maxSize?: number;
+
+  @IsOptional()
+  @IsArray()
+  uploadedFiles?: any[];
+
+  @IsOptional()
+  matrix?: any;
+
+  @IsOptional()
+  @IsInt()
+  order?: number;
+
+  @IsOptional()
+  @IsString()
+  branchCondition?: string;
 }
 
 export class UpdateSectionDto {
