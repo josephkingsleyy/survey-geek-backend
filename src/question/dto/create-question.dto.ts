@@ -109,6 +109,18 @@ export class CreateQuestionDto {
   allowUpload?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  allowTime?: boolean;
+
+  @IsOptional()
+  @IsString()
+  allowedRange?: string;
+
+  @IsOptional()
+  @IsString()
+  timeFormat?: string;
+
+  @IsOptional()
   @IsString()
   description?: string;
 

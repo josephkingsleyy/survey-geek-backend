@@ -38,6 +38,18 @@ export class CreateQuestionAlongDto {
   @IsOptional()
   @IsBoolean()
   allowUpload?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowTime?: boolean;
+
+  @IsOptional()
+  @IsString()
+  allowedRange?: string;
+
+  @IsOptional()
+  @IsString()
+  timeFormat?: string;
 }
 
 export class CreateSurveyDto {

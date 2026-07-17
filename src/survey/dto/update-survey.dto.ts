@@ -59,6 +59,15 @@ class UpdateQuestionDto {
   scaleMax?: number;
 
   @IsOptional()
+  allowTime?: boolean;
+
+  @IsOptional()
+  allowedRange?: string;
+
+  @IsOptional()
+  timeFormat?: string;
+
+  @IsOptional()
   @IsString()
   targetAudience?: string;
 

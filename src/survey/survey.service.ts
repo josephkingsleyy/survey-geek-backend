@@ -144,6 +144,9 @@ export class SurveyService {
                 scaleMin: q.scaleMin ?? null,
                 scaleMax: q.scaleMax ?? null,
                 allowUpload: q.allowUpload ?? false,
+                allowTime: q.allowTime ?? false,
+                allowedRange: q.allowedRange ?? null,
+                timeFormat: q.timeFormat ?? '24_HOUR',
                 sectionId: section.id,
                 userId,
               },
@@ -992,6 +995,9 @@ export class SurveyService {
                   required: q.required ?? false,
                   scaleMin: q.scaleMin,
                   scaleMax: q.scaleMax,
+                  allowTime: q.allowTime ?? false,
+                  allowedRange: q.allowedRange ?? null,
+                  timeFormat: q.timeFormat ?? '24_HOUR',
                 },
               });
             } else {
@@ -1005,6 +1011,9 @@ export class SurveyService {
                   required: q.required ?? false,
                   scaleMin: q.scaleMin,
                   scaleMax: q.scaleMax,
+                  allowTime: q.allowTime ?? false,
+                  allowedRange: q.allowedRange ?? null,
+                  timeFormat: q.timeFormat ?? '24_HOUR',
                 },
               });
             }
