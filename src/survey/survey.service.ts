@@ -276,8 +276,11 @@ export class SurveyService {
         take: limit,
         include: {
           sections: {
+            orderBy: { order: 'asc' },
             include: {
-              questions: true, // ✅ nested inside sections
+              questions: {
+                orderBy: { order: 'asc' },
+              },
             },
           },
           responses: true,
@@ -484,6 +487,7 @@ export class SurveyService {
           orderBy: { order: 'asc' },
           include: {
             questions: {
+              orderBy: { order: 'asc' },
               include: {
                 matrix: true,
               },
