@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { CloudinaryService } from './cloudinary.service';
 import { CreateCloudinaryDto } from './dto/create-cloudinary.dto';
@@ -58,7 +59,24 @@ export class CloudinaryController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('maxSizeKB') maxSizeKBStr?: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file provided.');
+    }
+
+    // Default to 1024 KB (1 MB) if no limit is passed
+    const maxSizeKB = maxSizeKBStr ? parseInt(maxSizeKBStr, 10) : 1024;
+    const maxSizeBytes = maxSizeKB * 1024;
+
+    if (file.size > maxSizeBytes) {
+      throw new BadRequestException(
+        `File size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum allowed size of ${maxSizeKB >= 1024 ? `${maxSizeKB / 1024} MB` : `${maxSizeKB} KB`}.`,
+      );
+    }
+
     const result = await this.cloudinaryService.uploadImage(file);
     return {
       message: 'File uploaded successfully',
