@@ -93,6 +93,7 @@ export class CreateQuestionAlongDto {
 }
 
 export class CreateSurveyDto {
+  @IsOptional()
   @IsArray()
   @IsInt({ each: true })
   surveyInterestIds?: number[];

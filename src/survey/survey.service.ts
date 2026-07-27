@@ -50,15 +50,7 @@ export class SurveyService {
       }
     } else {
       // General audience (or general is default)
-      // - Validate that we have at least one interest and at most 3
-      if (!dto.surveyInterestIds || !Array.isArray(dto.surveyInterestIds) || dto.surveyInterestIds.length === 0) {
-        throw new BadRequestException('At least one interest is required for a general audience survey');
-      }
-      if (dto.surveyInterestIds.length > 3) {
-        throw new BadRequestException('Maximum of 3 interests allowed');
-      }
-
-      // - Clear target specific fields
+      // Clear target specific fields
       dto.audienceOccupation = null;
       dto.audienceState = null;
       dto.timeline = null;
@@ -852,17 +844,8 @@ export class SurveyService {
           }).map(u => u.id);
 
         } else {
-          // General Audience: matches users whose profile interests include any of the survey's selected interests
-          const interestIds = updatedSurvey.surveyInterests.map(i => i.id);
-
+          // General Audience: send/broadcast to all users
           const users = await this.prisma.user.findMany({
-            where: {
-              surveyInterest: {
-                some: {
-                  id: { in: interestIds }
-                }
-              }
-            },
             select: { id: true }
           });
           userIds = users.map((u) => u.id);
