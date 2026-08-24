@@ -453,12 +453,12 @@ export class PaymentService {
         },
       });
 
-      await this.notificationService.create({
+      this.notificationService.create({
         userId: payment.userId,
         title: 'Payment Successful',
         message: `Your wallet has been credited with ₦${payment.amount}`,
         type: 'payment',
-      });
+      }).catch((err) => console.error('❌ Payment notification failed:', err));
 
       return updatedPayment;
     });

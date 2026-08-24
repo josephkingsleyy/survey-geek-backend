@@ -44,6 +44,7 @@ export interface PartialPointScoringConfig {
 @Injectable()
 export class SurveyPointService {
   private readonly logger = new Logger(SurveyPointService.name);
+  private cachedConfig: PointScoringConfig | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -52,30 +53,45 @@ export class SurveyPointService {
 
   /**
    * Get the active scoring model configuration from DB, or fallback to system defaults.
+   * Uses in-memory cache to eliminate repetitive DB queries.
    */
   async getConfig(): Promise<PointScoringConfig> {
+    if (this.cachedConfig) {
+      return this.cachedConfig;
+    }
+
     try {
       const dbConfig = await this.prisma.surveyPointConfig.findUnique({
         where: { id: 1 },
       });
 
       if (dbConfig && dbConfig.weights && dbConfig.levels) {
-        return {
+        this.cachedConfig = {
           weights: dbConfig.weights as unknown as PointScoringConfig['weights'],
           levels: dbConfig.levels as unknown as PointScoringConfig['levels'],
         };
+        return this.cachedConfig;
       }
     } catch (error) {
       this.logger.warn(`Could not load survey point config from DB, using fallback defaults: ${error.message}`);
     }
 
-    return DEFAULT_POINT_SCORING_CONFIG;
+    this.cachedConfig = DEFAULT_POINT_SCORING_CONFIG;
+    return this.cachedConfig;
+  }
+
+  /**
+   * Invalidate in-memory cache.
+   */
+  clearCache(): void {
+    this.cachedConfig = null;
   }
 
   /**
    * Update the production scoring model configuration (Single production endpoint).
    */
   async updateConfig(newConfig: PartialPointScoringConfig): Promise<PointScoringConfig> {
+    this.clearCache();
     const currentConfig = await this.getConfig();
 
     const updatedWeights = {
@@ -98,10 +114,12 @@ export class SurveyPointService {
       },
     });
 
-    return {
+    const result = {
       weights: saved.weights as unknown as PointScoringConfig['weights'],
       levels: saved.levels as unknown as PointScoringConfig['levels'],
     };
+    this.cachedConfig = result;
+    return result;
   }
 
   /**

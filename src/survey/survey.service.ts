@@ -857,11 +857,11 @@ export class SurveyService {
         }
 
         if (userIds.length > 0) {
-          await this.notificationService.broadcast(userIds, {
+          this.notificationService.broadcast(userIds, {
             title: 'New Survey Available',
             message: `A new survey "${updatedSurvey.title}" was just published.`,
             type: 'survey',
-          });
+          }).catch((err) => console.error('❌ Broadcast failed:', err));
         }
       };
 
@@ -875,11 +875,11 @@ export class SurveyService {
 
         // 🔔 Send in-app notification
         if (adminIds.length) {
-          await this.notificationService.broadcast(adminIds, {
+          this.notificationService.broadcast(adminIds, {
             title: 'Survey Pending Approval',
             message: `A survey "${updatedSurvey.title}" is awaiting approval.`,
             type: 'survey',
-          });
+          }).catch((err) => console.error('❌ Admin broadcast failed:', err));
         }
 
         // 📧 Send email to admins

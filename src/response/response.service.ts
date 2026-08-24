@@ -91,12 +91,15 @@ export class ResponseService {
       });
 
       if (isNew && survey) {
-        await this.notificationService.create({
-          userId: survey.userId,
-          title: 'New Response Received',
-          message: `A new response has been submitted for your survey "${survey.title}".`,
-          type: 'response',
-        });
+        // Fire notification asynchronously without blocking response submission API latency
+        Promise.resolve(
+          this.notificationService.create({
+            userId: survey.userId,
+            title: 'New Response Received',
+            message: `A new response has been submitted for your survey "${survey.title}".`,
+            type: 'response',
+          })
+        ).catch(() => {});
       }
 
       // Check survey completion for respondent and auto-award survey points
@@ -104,29 +107,48 @@ export class ResponseService {
       let isCompleted = false;
 
       if (survey) {
-        const allQuestions = survey.sections.flatMap((s) => s.questions);
-        const requiredQuestions = allQuestions.filter((q) => q.required);
-
-        const userResponses = await this.prisma.response.findMany({
+        // Fast-path: Check if reward was already claimed for this survey
+        const existingReward = await this.prisma.surveyRewardLog.findUnique({
           where: {
-            userId,
-            surveyId: survey.id,
+            userId_surveyId: {
+              userId,
+              surveyId: survey.id,
+            },
           },
-          select: { questionId: true },
         });
 
-        const answeredQuestionIds = new Set(userResponses.map((r) => r.questionId));
-
-        if (requiredQuestions.length > 0) {
-          isCompleted = requiredQuestions.every((q) => answeredQuestionIds.has(q.id));
-        } else if (allQuestions.length > 0) {
-          isCompleted = allQuestions.every((q) => answeredQuestionIds.has(q.id));
-        } else {
+        if (existingReward) {
           isCompleted = true;
-        }
+          rewardInfo = {
+            awarded: false,
+            pointsAwarded: 0,
+            message: 'Points have already been awarded to this respondent for this survey.',
+          };
+        } else {
+          const allQuestions = survey.sections.flatMap((s) => s.questions);
+          const requiredQuestions = allQuestions.filter((q) => q.required);
 
-        if (isCompleted) {
-          rewardInfo = await this.surveyPointService.awardPointsOnCompletion(userId, survey.id);
+          const userResponses = await this.prisma.response.findMany({
+            where: {
+              userId,
+              surveyId: survey.id,
+            },
+            select: { questionId: true },
+          });
+
+          const answeredQuestionIds = new Set(userResponses.map((r) => r.questionId));
+
+          if (requiredQuestions.length > 0) {
+            isCompleted = requiredQuestions.every((q) => answeredQuestionIds.has(q.id));
+          } else if (allQuestions.length > 0) {
+            isCompleted = allQuestions.every((q) => answeredQuestionIds.has(q.id));
+          } else {
+            isCompleted = true;
+          }
+
+          if (isCompleted) {
+            rewardInfo = await this.surveyPointService.awardPointsOnCompletion(userId, survey.id);
+          }
         }
       }
 
