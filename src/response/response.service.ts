@@ -7,6 +7,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateResponseDto } from './dto/create-response.dto';
 import { UpdateResponseDto } from './dto/update-response.dto';
 import { NotificationService } from 'src/notification/notification.service';
+import { SurveyPointService } from 'src/survey/survey-point.service';
 import { Limit } from 'src/common/utils/app';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class ResponseService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    private readonly surveyPointService: SurveyPointService,
   ) { }
 
   async create(dto: CreateResponseDto, userId: number) {
@@ -70,24 +72,61 @@ export class ResponseService {
       const isNew =
         response.createdAt.getTime() === response.updatedAt.getTime();
 
-      if (isNew) {
-        const survey = await this.prisma.survey.findFirst({
-          where: {
-            OR: [
-              { id: dto.surveyId },
-              { slug: dto.slug }
-            ]
+      const survey = await this.prisma.survey.findFirst({
+        where: {
+          OR: [
+            { id: dto.surveyId },
+            { slug: dto.slug }
+          ]
+        },
+        include: {
+          sections: {
+            include: {
+              questions: {
+                select: { id: true, required: true },
+              },
+            },
           },
-          select: { userId: true, title: true },
+        },
+      });
+
+      if (isNew && survey) {
+        await this.notificationService.create({
+          userId: survey.userId,
+          title: 'New Response Received',
+          message: `A new response has been submitted for your survey "${survey.title}".`,
+          type: 'response',
+        });
+      }
+
+      // Check survey completion for respondent and auto-award survey points
+      let rewardInfo: any = null;
+      let isCompleted = false;
+
+      if (survey) {
+        const allQuestions = survey.sections.flatMap((s) => s.questions);
+        const requiredQuestions = allQuestions.filter((q) => q.required);
+
+        const userResponses = await this.prisma.response.findMany({
+          where: {
+            userId,
+            surveyId: survey.id,
+          },
+          select: { questionId: true },
         });
 
-        if (survey) {
-          await this.notificationService.create({
-            userId: survey.userId,
-            title: 'New Response Received',
-            message: `A new response has been submitted for your survey "${survey.title}".`,
-            type: 'response',
-          });
+        const answeredQuestionIds = new Set(userResponses.map((r) => r.questionId));
+
+        if (requiredQuestions.length > 0) {
+          isCompleted = requiredQuestions.every((q) => answeredQuestionIds.has(q.id));
+        } else if (allQuestions.length > 0) {
+          isCompleted = allQuestions.every((q) => answeredQuestionIds.has(q.id));
+        } else {
+          isCompleted = true;
+        }
+
+        if (isCompleted) {
+          rewardInfo = await this.surveyPointService.awardPointsOnCompletion(userId, survey.id);
         }
       }
 
@@ -96,6 +135,8 @@ export class ResponseService {
           ? 'Response submitted successfully.'
           : 'Response updated successfully.',
         data: response,
+        surveyCompleted: isCompleted,
+        reward: rewardInfo,
       };
     } catch (error) {
       throw new InternalServerErrorException(

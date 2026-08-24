@@ -14,6 +14,7 @@ import { Limit } from 'src/common/utils/app';
 import { sendEmail } from 'src/common/utils/mail-service';
 import { SurveyStatus } from '@prisma/client';
 import { PricingService } from './pricing.service';
+import { SurveyPointService } from './survey-point.service';
 import { buildInvoiceEmail, buildInvoiceLineItems } from './invoice-email.template';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class SurveyService {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly pricingService: PricingService,
+    private readonly surveyPointService: SurveyPointService,
   ) { }
 
   private async validateAndProcessAudienceAndInterests(
@@ -80,6 +82,7 @@ export class SurveyService {
     //   support: createSurveyDto.support,
     // });
     const calculatedPrice = this.pricingService.calculatePrice(createSurveyDto);
+    const pointCalculation = await this.surveyPointService.calculateSurveyPoints(createSurveyDto);
 
     // ── Transaction: only fast DB writes in here ─────────────────────────────
     const result = await this.prisma.$transaction(async (tx) => {
@@ -98,6 +101,8 @@ export class SurveyService {
           slug,
           userId,
           price: calculatedPrice,
+          calculatedLevel: pointCalculation.level,
+          calculatedPoints: pointCalculation.points,
           audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
           audienceState: audienceState ? JSON.stringify(audienceState) : null,
           surveyInterests: surveyInterestIds?.length

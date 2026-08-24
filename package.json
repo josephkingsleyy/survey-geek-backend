@@ -34,6 +34,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.13",
     "@nestjs/schedule": "^6.0.1",
+    "@nestjs/swagger": "^11.4.6",
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/websockets": "^11.1.13",
     "@prisma/client": "^6.17.1",
@@ -53,7 +54,8 @@
     "rxjs": "^7.8.1",
     "sharp": "^0.34.5",
     "socket.io": "^4.8.3",
-    "streamifier": "^0.1.1"
+    "streamifier": "^0.1.1",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -101,6 +103,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1",
+      "^pricing.config$": "<rootDir>/../pricing.config"
+    }
   }
 }

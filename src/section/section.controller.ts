@@ -13,18 +13,21 @@ import { SectionService } from './section.service';
 import { CreateSectionDto } from './dto/create-section.dto';
 import { UpdateSectionDto } from './dto/update-section.dto';
 import { Limit } from 'src/common/utils/app';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
+@ApiTags('Sections')
 @Controller('sections')
 export class SectionController {
   constructor(private readonly sectionService: SectionService) {}
 
-  // 🟢 Create a new section (optionally linked to a survey)
+  @ApiOperation({ summary: 'Create a new section' })
+  @ApiResponse({ status: 201, description: 'Section created successfully.' })
   @Post()
   async create(@Body() createSectionDto: CreateSectionDto) {
     return this.sectionService.create(createSectionDto);
   }
 
-  // 🔹 Get all sections (with optional pagination and filtering by surveyId)
+  @ApiOperation({ summary: 'Get all sections with optional pagination and surveyId filter' })
   @Get()
   async findAll(
     @Query('page', ParseIntPipe) page = 1,
@@ -38,13 +41,15 @@ export class SectionController {
     );
   }
 
-  // 🔹 Get one section (with nested questions)
+  @ApiOperation({ summary: 'Get section by ID' })
+  @ApiParam({ name: 'id', description: 'Section ID' })
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.sectionService.findOne(id);
   }
 
-  // 🟡 Update a section
+  @ApiOperation({ summary: 'Update section by ID' })
+  @ApiParam({ name: 'id', description: 'Section ID' })
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -53,7 +58,8 @@ export class SectionController {
     return this.sectionService.update(id, updateSectionDto);
   }
 
-  // 🔴 Delete a section (and optionally its questions)
+  @ApiOperation({ summary: 'Delete section by ID' })
+  @ApiParam({ name: 'id', description: 'Section ID' })
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.sectionService.remove(id);

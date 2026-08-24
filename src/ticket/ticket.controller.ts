@@ -19,19 +19,22 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 
+@ApiTags('Support Tickets')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('ticket')
 export class TicketController {
   constructor(private readonly ticketService: TicketService) { }
 
+  @ApiOperation({ summary: 'Create a support ticket' })
+  @ApiResponse({ status: 201, description: 'Support ticket created.' })
   @Post()
   async create(
     @Body() createTicketDto: CreateTicketDto,
     @CurrentUser('userId') userId: number,
   ) {
-    console.log('userId', userId);
-
     try {
       return await this.ticketService.create(createTicketDto, userId);
     } catch (err) {
@@ -39,6 +42,7 @@ export class TicketController {
     }
   }
 
+  @ApiOperation({ summary: 'Get all support tickets (Admin)' })
   @Roles('Admin')
   @Get()
   async findAll(@Query() pagination: PaginationDto) {
@@ -52,6 +56,7 @@ export class TicketController {
     }
   }
 
+  @ApiOperation({ summary: 'Get tickets created by authenticated user' })
   @Get('my-tickets')
   async findMyTickets(
     @CurrentUser('userId') userId: number,
@@ -68,6 +73,7 @@ export class TicketController {
     }
   }
 
+  @ApiOperation({ summary: 'Get staff list available for ticket assignment' })
   @Get('staff-list')
   async getStaffList(
     @Query() pagination: PaginationDto,
@@ -86,6 +92,8 @@ export class TicketController {
     }
   }
 
+  @ApiOperation({ summary: 'Get support ticket by ID' })
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -95,6 +103,8 @@ export class TicketController {
     }
   }
 
+  @ApiOperation({ summary: 'Update support ticket by ID' })
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -107,6 +117,8 @@ export class TicketController {
     }
   }
 
+  @ApiOperation({ summary: 'Hard delete ticket permanently' })
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
   @Delete('hard/:id')
   async hardDelete(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -116,6 +128,8 @@ export class TicketController {
     }
   }
 
+  @ApiOperation({ summary: 'Close support ticket' })
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
   @Patch('close/:id')
   async updateToClose(
     @Param('id', ParseIntPipe) id: number,
@@ -124,6 +138,9 @@ export class TicketController {
     return this.ticketService.updateToClose(id, dto);
   }
 
+  @ApiOperation({ summary: 'Assign ticket to staff member (Admin)' })
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
+  @ApiParam({ name: 'userId', description: 'Staff user ID' })
   @Roles('Admin')
   @Patch('assign/:id/:userId')
   async assignTicket(

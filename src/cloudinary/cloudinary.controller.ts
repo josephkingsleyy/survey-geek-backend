@@ -15,26 +15,33 @@ import { CloudinaryService } from './cloudinary.service';
 import { CreateCloudinaryDto } from './dto/create-cloudinary.dto';
 import { UpdateCloudinaryDto } from './dto/update-cloudinary.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 
+@ApiTags('Cloudinary Media')
 @Controller('cloudinary')
 export class CloudinaryController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 
+  @ApiOperation({ summary: 'Create a Cloudinary media record' })
   @Post()
   create(@Body() createCloudinaryDto: CreateCloudinaryDto) {
     return this.cloudinaryService.create(createCloudinaryDto);
   }
 
+  @ApiOperation({ summary: 'Get all Cloudinary media records' })
   @Get()
   findAll() {
     return this.cloudinaryService.findAll();
   }
 
+  @ApiOperation({ summary: 'Get Cloudinary image details by publicId' })
+  @ApiQuery({ name: 'publicId', description: 'Cloudinary public ID' })
   @Get(':id')
   findOne(@Query('publicId') publicId: string) {
     return this.cloudinaryService.findOne(publicId);
   }
 
+  @ApiOperation({ summary: 'Update Cloudinary record by ID' })
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -43,13 +50,14 @@ export class CloudinaryController {
     return this.cloudinaryService.update(+id, updateCloudinaryDto);
   }
 
+  @ApiOperation({ summary: 'Delete Cloudinary file by publicId' })
+  @ApiQuery({ name: 'publicId', description: 'Cloudinary public ID' })
   @Delete('delete')
   async deleteImage(@Query('publicId') publicId: string) {
     if (!publicId) {
       return { message: 'publicId query parameter is required' };
     }
 
-    console.log('Deleting public_id:', publicId);
     const result = await this.cloudinaryService.remove(publicId);
     return {
       message: 'Image deleted successfully',
@@ -57,6 +65,21 @@ export class CloudinaryController {
     };
   }
 
+  @ApiOperation({ summary: 'Upload file / image to Cloudinary' })
+  @ApiConsumes('multipart/form-data')
+  @ApiQuery({ name: 'maxSizeKB', required: false, description: 'Max allowed size in KB (default 1024)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'File uploaded successfully.' })
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
@@ -67,7 +90,6 @@ export class CloudinaryController {
       throw new BadRequestException('No file provided.');
     }
 
-    // Default to 1024 KB (1 MB) if no limit is passed
     const maxSizeKB = maxSizeKBStr ? parseInt(maxSizeKBStr, 10) : 1024;
     const maxSizeBytes = maxSizeKB * 1024;
 
