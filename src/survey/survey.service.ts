@@ -763,9 +763,15 @@ export class SurveyService {
         where: { id: existingSurvey.id },
         data: {
           ...surveyData,
-          audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
-          audienceState: audienceState ? JSON.stringify(audienceState) : null,
-          price: price !== undefined ? parseFloat(price as string) : undefined,
+          ...(audienceOccupation !== undefined && {
+            audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
+          }),
+          ...(audienceState !== undefined && {
+            audienceState: audienceState ? JSON.stringify(audienceState) : null,
+          }),
+          ...(price !== undefined && {
+            price: parseFloat(price as string),
+          }),
         },
         include: {
           user: true,
@@ -794,11 +800,11 @@ export class SurveyService {
       }
       if (updateSurveyDto.status === "PUBLISHED") {
         if (updatedSurvey?.user?.email) {
-          await sendEmail({
+          sendEmail({
             to: updatedSurvey.user.email,
             subject: 'Survey Published',
             text: `Your survey "${updatedSurvey.title}" has been approved and published.`,
-          });
+          }).catch((err) => console.error('❌ Email failed:', err));
         }
 
         let userIds: number[] = [];
@@ -882,23 +888,22 @@ export class SurveyService {
           }).catch((err) => console.error('❌ Admin broadcast failed:', err));
         }
 
-        // 📧 Send email to admins
-        await Promise.all(
-          admins
-            .filter((a) => a.email)
-            .map((admin) =>
-              sendEmail({
-                to: admin.email!,
-                subject: 'Survey Pending Approval',
-                text: `A survey "${updatedSurvey.title}" has been submitted and is awaiting your approval.`,
-              })
-            )
-        );
+        // 📧 Send email to admins (non-blocking)
+        // admins
+        //   .filter((a) => a.email)
+        //   .forEach((admin) => {
+        //     sendEmail({
+        //       to: admin.email!,
+        //       subject: 'Survey Pending Approval',
+        //       text: `A survey "${updatedSurvey.title}" has been submitted and is awaiting your approval.`,
+        //     }).catch((err) => console.error(`❌ Admin email failed for ${admin.email}:`, err));
+        //   });
       }
       return updatedSurvey;
     } catch (error) {
       console.error(`Failed to update survey with ID ${id}:`, error);
-      throw new Error(`Could not update survey with ID ${id}`);
+      if (error instanceof HttpException) throw error;
+      throw new Error(`Could not update survey with ID ${id}: ${error?.message || error}`);
     }
   }
 
