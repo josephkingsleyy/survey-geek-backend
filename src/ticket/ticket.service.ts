@@ -26,7 +26,7 @@ export enum Priority {
 
 @Injectable()
 export class TicketService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createTicketDto: CreateTicketDto, userId: number) {
     try {
@@ -44,11 +44,11 @@ export class TicketService {
           userId: userId,
           attachments: createTicketDto.attachments
             ? {
-                create: createTicketDto.attachments.map((a) => ({
-                  url: a.url,
-                  filename: a.filename,
-                })),
-              }
+              create: createTicketDto.attachments.map((a) => ({
+                url: a.url,
+                filename: a.filename,
+              })),
+            }
             : undefined,
         },
         include: { attachments: true },
@@ -59,15 +59,15 @@ export class TicketService {
         select: { email: true },
       });
 
-      // if (admins.length > 0) {
-      //   for (const admin of admins) {
-      //     await sendEmail({
-      //       to: admin.email,
-      //       subject: 'New Ticket Created',
-      //       text: `A new ticket (#${ticket.id}) has been created by user ${userId}: ${ticket.title}`,
-      //     });
-      //   }
-      // }
+      if (admins.length > 0) {
+        for (const admin of admins) {
+          await sendEmail({
+            to: admin.email,
+            subject: 'New Ticket Created',
+            text: `A new ticket (#${ticket.id}) has been created by user ${userId}: ${ticket.title}`,
+          });
+        }
+      }
 
       return { message: 'Ticket created successfully', data: ticket };
     } catch (err) {
@@ -230,11 +230,11 @@ export class TicketService {
 
           attachments: dto.attachments
             ? {
-                create: dto.attachments.map((a) => ({
-                  url: a.url,
-                  filename: a.filename,
-                })),
-              }
+              create: dto.attachments.map((a) => ({
+                url: a.url,
+                filename: a.filename,
+              })),
+            }
             : undefined,
 
           // attachments: dto.attachments?.length

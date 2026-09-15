@@ -889,15 +889,15 @@ export class SurveyService {
         }
 
         // 📧 Send email to admins (non-blocking)
-        // admins
-        //   .filter((a) => a.email)
-        //   .forEach((admin) => {
-        //     sendEmail({
-        //       to: admin.email!,
-        //       subject: 'Survey Pending Approval',
-        //       text: `A survey "${updatedSurvey.title}" has been submitted and is awaiting your approval.`,
-        //     }).catch((err) => console.error(`❌ Admin email failed for ${admin.email}:`, err));
-        //   });
+        admins
+          .filter((a) => a.email)
+          .forEach((admin) => {
+            sendEmail({
+              to: admin.email!,
+              subject: 'Survey Pending Approval',
+              text: `A survey "${updatedSurvey.title}" has been submitted and is awaiting your approval.`,
+            }).catch((err) => console.error(`❌ Admin email failed for ${admin.email}:`, err));
+          });
       }
       return updatedSurvey;
     } catch (error) {
