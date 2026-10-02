@@ -86,7 +86,7 @@ export class PaymentController {
   @ApiOperation({ summary: 'Buy points using wallet cash balance' })
   @Post('buy-points')
   buyPoints(@CurrentUser('sub') sub: number, @Body() dto: BuyPointsDto) {
-    return this.paymentService.convertWalletToPoints(sub, dto.points);
+    return this.paymentService.buyPoints(sub, dto);
   }
 
   @ApiOperation({ summary: 'Sell points for wallet cash balance' })

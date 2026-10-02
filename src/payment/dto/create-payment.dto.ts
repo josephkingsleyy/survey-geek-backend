@@ -57,4 +57,14 @@ export class BuyPointsDto {
   @IsInt()
   @Min(1)
   points: number;
+
+  @ApiPropertyOptional({ example: 500, description: 'Amount in currency to spend for points' })
+  @IsNumber()
+  @IsOptional()
+  amount?: number;
+
+  @ApiPropertyOptional({ example: 'POINTS_TO_WALLET', description: 'Transaction type' })
+  @IsString()
+  @IsOptional()
+  type?: 'POINTS_TO_WALLET' | 'WALLET_TO_POINTS' = 'WALLET_TO_POINTS';
 }

@@ -39,6 +39,12 @@ export class WithdrawalController {
     return this.withdrawalService.findAll();
   }
 
+  @ApiOperation({ summary: 'Get all bank list' })
+  @Get('bank-list')
+  findAllBanks() {
+    return this.withdrawalService.getBanks();
+  }
+
   @ApiOperation({ summary: 'Get withdrawal request by ID' })
   @ApiParam({ name: 'id', description: 'Withdrawal ID' })
   @Get(':id')

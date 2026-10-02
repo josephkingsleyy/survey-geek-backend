@@ -7,8 +7,7 @@ import { NotificationService } from 'src/notification/notification.service';
 import { Limit } from 'src/common/utils/app';
 import { Payment } from '@prisma/client';
 
-export const POINT_RATE = 10; // ₦10 = 1 point
-
+const POINT_RATE = Number(process.env.POINT_RATE) || 10;
 @Injectable()
 export class PaymentService {
   constructor(
@@ -274,6 +273,65 @@ export class PaymentService {
     });
   }
 
+  /**
+   * Buy points using wallet balance. Accepts either `dto.amount` (currency)
+   * or `dto.points`. If both provided, `amount` takes precedence.
+   */
+  async buyPoints(userId: number, dto: { points?: number; amount?: number }) {
+    // determine points and cost
+    let points = dto.points ?? 0;
+    let cost = 0;
+
+    if (dto.amount && dto.amount > 0) {
+      cost = dto.amount;
+      // enforce exact multiple of POINT_RATE to avoid rounding loss
+      const remainder = cost % POINT_RATE;
+      if (Math.abs(remainder) > 1e-6) {
+        throw new HttpException(
+          `Amount must be an exact multiple of ${POINT_RATE} to avoid rounding loss`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      points = Math.floor(cost / POINT_RATE);
+      if (points <= 0) {
+        throw new HttpException('Amount too low to buy any points', HttpStatus.BAD_REQUEST);
+      }
+    } else if (points && points > 0) {
+      cost = points * POINT_RATE;
+    } else {
+      throw new HttpException('Provide amount or points to buy', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({ where: { userId } });
+
+      if (!wallet || wallet.balance < cost) {
+        throw new HttpException('Insufficient wallet balance', HttpStatus.BAD_REQUEST);
+      }
+
+      // decrement exact cost and increment points
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: {
+          balance: { decrement: cost },
+          points: { increment: points },
+        },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'points_purchase',
+          amount: cost,
+          points,
+          description: `Purchased ${points} points for ₦${cost}`,
+        },
+      });
+
+      return { balanceSpent: cost, pointsAdded: points };
+    });
+  }
+
   async convertPointsToWallet(userId: number, points: number) {
     const value = points * POINT_RATE;
 
@@ -383,25 +441,33 @@ export class PaymentService {
   }
 
   private async verifyFlutterwave(payment: Payment) {
-    const response = await axios.get(
-      `https://api.flutterwave.com/v3/transactions/${payment.reference}/verify`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-        },
+    // Query transactions by tx_ref (we use tx_ref when initializing payments)
+    const url = `https://api.flutterwave.com/v3/transactions?tx_ref=${encodeURIComponent(
+      payment.reference,
+    )}`;
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
       },
-    );
+    });
 
-    const data = response.data.data || response.data;
+    const records = response.data?.data;
 
-    if (data.status !== 'successful') {
+    if (!records || !Array.isArray(records) || records.length === 0) {
+      throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
+    }
+
+    const tx = records[0];
+
+    if (tx.status !== 'successful') {
       throw new HttpException('Payment not successful', HttpStatus.BAD_REQUEST);
     }
 
     return this.creditWallet({
       payment,
-      paidAt: new Date(data.created_at),
-      method: data.payment_type,
+      paidAt: new Date(tx.created_at || tx.createdAt || Date.now()),
+      method: tx.payment_type || tx.payment_method || tx.channel || 'flutterwave',
       description: 'Wallet funded via Flutterwave',
     });
   }

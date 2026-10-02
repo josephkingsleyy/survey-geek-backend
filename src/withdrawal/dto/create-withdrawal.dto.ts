@@ -9,7 +9,7 @@ export class CreateWithdrawalDto {
 
   @ApiProperty({ example: '0123456789', description: 'Bank account number' })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   accountNumber: string;
 
   @ApiProperty({ example: 'John Doe', description: 'Bank account name' })
@@ -17,10 +17,15 @@ export class CreateWithdrawalDto {
   @IsNotEmpty()
   accountName: string;
 
-  @ApiProperty({ example: 'GTBank', description: 'Name of destination bank' })
+  @ApiPropertyOptional({ example: 'GTBank', description: 'Name of destination bank' })
   @IsString()
-  @IsNotEmpty()
-  bankName: string;
+  @IsOptional()
+  bankName?: string;
+
+  @ApiPropertyOptional({ example: '50453', description: 'Paystack bank code for the destination bank' })
+  @IsString()
+  @IsOptional()
+  bankCode?: string;
 
   @ApiPropertyOptional({ example: 'Withdrawal Request' })
   @IsString()
