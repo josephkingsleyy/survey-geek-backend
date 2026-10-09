@@ -163,10 +163,10 @@ export class SurveyController {
   async update(
     @Param('id') id: string,
     @Body() updateSurveyDto: UpdateSurveyDto,
-    @CurrentUser('userId') userId: number,
+    @CurrentUser('sub') sub: number,
   ) {
     try {
-      return await this.surveyService.update(id, updateSurveyDto, userId);
+      return await this.surveyService.update(id, updateSurveyDto, sub);
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
     }

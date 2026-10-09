@@ -942,10 +942,11 @@ export class SurveyService {
   //   }
   // }
 
+
   async update(
     id: string,
     updateSurveyDto: UpdateSurveyDto,
-    userId?: number,
+    sub?: number,
   ) {
     await this.validateAndProcessAudienceAndInterests(updateSurveyDto);
 
@@ -971,19 +972,26 @@ export class SurveyService {
         throw new NotFoundException('Survey not found');
       }
 
-      const isPublishing = updateSurveyDto.status === 'PUBLISHED';
-      const isRejecting = updateSurveyDto.status === 'REJECTED';
+      const requestedStatus = updateSurveyDto.status;
+      const statusChanged =
+        requestedStatus !== undefined &&
+        existingSurvey.status !== requestedStatus;
 
-      // Approval/rejection must be attributed to the authenticated user.
-      if ((isPublishing || isRejecting) && userId == null) {
+      const isPublishing =
+        requestedStatus === 'PUBLISHED' && statusChanged;
+
+      const isRejecting =
+        requestedStatus === 'REJECTED' && statusChanged;
+
+      const isPending =
+        requestedStatus === 'PENDING' && statusChanged;
+
+      // Require the authenticated user's ID for approval/rejection.
+      if ((isPublishing || isRejecting) && sub == null) {
         throw new BadRequestException(
           'The authenticated user ID is required to approve or reject a survey.',
         );
       }
-
-      // Only send rejection emails when the survey transitions to REJECTED.
-      const newlyRejected =
-        isRejecting && existingSurvey.status !== 'REJECTED';
 
       const updatedSurvey = await this.prisma.survey.update({
         where: { id: existingSurvey.id },
@@ -1006,16 +1014,16 @@ export class SurveyService {
             price: parseFloat(price as string),
           }),
 
-          // Record the authenticated approver.
+          // Record approval and clear previous rejection metadata.
           ...(isPublishing && {
-            approvedById: userId!,
+            approvedById: sub!,
             rejectedById: null,
             rejectionReason: null,
           }),
 
-          // Record the authenticated rejector.
+          // Record rejection and clear previous approval metadata.
           ...(isRejecting && {
-            rejectedById: userId!,
+            rejectedById: sub!,
             approvedById: null,
           }),
         },
@@ -1028,7 +1036,7 @@ export class SurveyService {
       });
 
       // Update survey interests if provided.
-      if (surveyInterestIds) {
+      if (surveyInterestIds !== undefined) {
         const existingIds = existingSurvey.surveyInterests.map(
           (interest) => interest.id,
         );
@@ -1085,7 +1093,9 @@ export class SurveyService {
               const parsed = JSON.parse(updatedSurvey.audienceState);
 
               targetedStates = Array.isArray(parsed)
-                ? parsed.map((state) => String(state).toLowerCase().trim())
+                ? parsed.map((state) =>
+                  String(state).toLowerCase().trim(),
+                )
                 : [String(parsed).toLowerCase().trim()];
             }
           } catch {
@@ -1098,7 +1108,9 @@ export class SurveyService {
 
           try {
             if (updatedSurvey.audienceOccupation) {
-              const parsed = JSON.parse(updatedSurvey.audienceOccupation);
+              const parsed = JSON.parse(
+                updatedSurvey.audienceOccupation,
+              );
 
               targetedOccupations = Array.isArray(parsed)
                 ? parsed.map((occupation) =>
@@ -1168,7 +1180,7 @@ export class SurveyService {
       // ==========================================
       // REJECTED: Notify owner and admins
       // ==========================================
-      if (newlyRejected) {
+      if (isRejecting) {
         const rejectorName =
           [
             updatedSurvey.rejectedBy?.firstName,
@@ -1184,7 +1196,7 @@ export class SurveyService {
           ? `\n\nReason for rejection: ${updatedSurvey.rejectionReason}`
           : '';
 
-        // Email the survey owner.
+        // Notify survey owner.
         if (updatedSurvey.user?.email) {
           sendEmail({
             to: updatedSurvey.user.email,
@@ -1198,7 +1210,7 @@ export class SurveyService {
           );
         }
 
-        // Find administrators.
+        // Notify administrators.
         const admins = await this.prisma.user.findMany({
           where: { role: 'Admin' },
           select: {
@@ -1207,7 +1219,6 @@ export class SurveyService {
           },
         });
 
-        // Email administrators, including the rejector's name.
         admins
           .filter((admin) => admin.email)
           .forEach((admin) => {
@@ -1227,7 +1238,7 @@ export class SurveyService {
       // ==========================================
       // PENDING: Notify administrators
       // ==========================================
-      if (updateSurveyDto.status === 'PENDING') {
+      if (isPending) {
         const admins = await this.prisma.user.findMany({
           where: { role: 'Admin' },
           select: {
@@ -1268,7 +1279,10 @@ export class SurveyService {
 
       return updatedSurvey;
     } catch (error) {
-      console.error(`Failed to update survey with ID ${id}:`, error);
+      console.error(
+        `Failed to update survey with ID ${id}:`,
+        error,
+      );
 
       if (error instanceof HttpException) {
         throw error;
@@ -1280,6 +1294,7 @@ export class SurveyService {
       );
     }
   }
+
 
   async updateWithQuestionOld(id: number, dto: UpdateSurveyDto) {
     await this.validateAndProcessAudienceAndInterests(dto);
