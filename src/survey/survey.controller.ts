@@ -11,6 +11,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
@@ -162,9 +163,10 @@ export class SurveyController {
   async update(
     @Param('id') id: string,
     @Body() updateSurveyDto: UpdateSurveyDto,
+    @CurrentUser('userId') userId: number,
   ) {
     try {
-      return await this.surveyService.update(id, updateSurveyDto);
+      return await this.surveyService.update(id, updateSurveyDto, userId);
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
     }

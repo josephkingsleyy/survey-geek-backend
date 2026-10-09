@@ -749,40 +749,298 @@ export class SurveyService {
     };
   }
 
-  async update(id: string, updateSurveyDto: UpdateSurveyDto) {
+  // async update(id: string, updateSurveyDto: UpdateSurveyDto, userId: number) {
+  //   await this.validateAndProcessAudienceAndInterests(updateSurveyDto);
+  //   const { sections, audienceOccupation, audienceState, surveyInterestIds, maxResponse, price, ...surveyData } = updateSurveyDto;
+  //   try {
+  //     const existingSurvey = await this.prisma.survey.findUnique({
+  //       where: isNaN(Number(id)) ? { slug: id } : { id: Number(id) },
+  //       include: { surveyInterests: true },
+  //     });
+  //     if (!existingSurvey) throw new NotFoundException('Survey not found');
+
+  //     const updatedSurvey = await this.prisma.survey.update({
+  //       where: { id: existingSurvey.id },
+  //       data: {
+  //         ...surveyData,
+  //         ...(audienceOccupation !== undefined && {
+  //           audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
+  //         }),
+  //         ...(audienceState !== undefined && {
+  //           audienceState: audienceState ? JSON.stringify(audienceState) : null,
+  //         }),
+  //         ...(price !== undefined && {
+  //           price: parseFloat(price as string),
+  //         }),
+  //       },
+  //       include: {
+  //         user: true,
+  //         surveyInterests: true,
+  //       }
+  //     });
+
+  //     if (surveyInterestIds) {
+  //       const existingIds = existingSurvey.surveyInterests.map((i) => i.id);
+  //       const toConnect = surveyInterestIds.filter((x) => !existingIds.includes(x)).map((id) => ({ id }));
+  //       const toDisconnect = existingIds.filter((x) => !surveyInterestIds.includes(x)).map((id) => ({ id }));
+  //       const reUpdatedSurvey = await this.prisma.survey.update({
+  //         where: { id: existingSurvey.id },
+  //         data: {
+  //           surveyInterests: {
+  //             connect: toConnect,
+  //             disconnect: toDisconnect,
+  //           },
+  //         },
+  //         include: {
+  //           user: true,
+  //           surveyInterests: true,
+  //         }
+  //       });
+  //       Object.assign(updatedSurvey, reUpdatedSurvey);
+  //     }
+  //     if (updateSurveyDto.status === "PUBLISHED") {
+  //       if (updatedSurvey?.user?.email) {
+  //         sendEmail({
+  //           to: updatedSurvey.user.email,
+  //           subject: 'Survey Published',
+  //           text: `Your survey "${updatedSurvey.title}" has been approved and published.`,
+  //         }).catch((err) => console.error('❌ Email failed:', err));
+  //       }
+
+  //       let userIds: number[] = [];
+
+  //       if (updatedSurvey.targetAudience === 'specific') {
+  //         // Specific Audience: matches occupation and stateOfResidence
+  //         let targetedStates: string[] = [];
+  //         let targetedOccupations: string[] = [];
+
+  //         try {
+  //           if (updatedSurvey.audienceState) {
+  //             const parsed = JSON.parse(updatedSurvey.audienceState);
+  //             targetedStates = Array.isArray(parsed) ? parsed.map(s => s.toLowerCase().trim()) : [parsed.toLowerCase().trim()];
+  //           }
+  //         } catch {
+  //           if (updatedSurvey.audienceState) {
+  //             targetedStates = [updatedSurvey.audienceState.toLowerCase().trim()];
+  //           }
+  //         }
+
+  //         try {
+  //           if (updatedSurvey.audienceOccupation) {
+  //             const parsed = JSON.parse(updatedSurvey.audienceOccupation);
+  //             targetedOccupations = Array.isArray(parsed) ? parsed.map(o => o.toLowerCase().trim()) : [parsed.toLowerCase().trim()];
+  //           }
+  //         } catch {
+  //           if (updatedSurvey.audienceOccupation) {
+  //             targetedOccupations = [updatedSurvey.audienceOccupation.toLowerCase().trim()];
+  //           }
+  //         }
+
+  //         const allUsers = await this.prisma.user.findMany({
+  //           select: {
+  //             id: true,
+  //             stateOfResidence: true,
+  //             occupation: true,
+  //           }
+  //         });
+
+  //         userIds = allUsers.filter(u => {
+  //           const userState = u.stateOfResidence?.toLowerCase().trim();
+  //           const userOcc = u.occupation?.toLowerCase().trim();
+
+  //           const stateMatches = targetedStates.length === 0 || (userState && targetedStates.includes(userState));
+  //           const occMatches = targetedOccupations.length === 0 || (userOcc && targetedOccupations.includes(userOcc));
+
+  //           return stateMatches && occMatches;
+  //         }).map(u => u.id);
+
+  //       } else {
+  //         // General Audience: send/broadcast to all users
+  //         const users = await this.prisma.user.findMany({
+  //           select: { id: true }
+  //         });
+  //         userIds = users.map((u) => u.id);
+  //       }
+
+  //       if (userIds.length > 0) {
+  //         this.notificationService.broadcast(userIds, {
+  //           title: 'New Survey Available',
+  //           message: `A new survey "${updatedSurvey.title}" was just published.`,
+  //           type: 'survey',
+  //         }).catch((err) => console.error('❌ Broadcast failed:', err));
+  //       }
+  //     };
+
+  //     if (updateSurveyDto.status === "REJECTED") {
+  //       // Get all admins
+  //       const admins = await this.prisma.user.findMany({
+  //         where: { role: "Admin" },
+  //         select: { id: true, email: true },
+  //       });
+
+  //       // 📧 Notify survey owner
+  //       if (updatedSurvey.user?.email) {
+  //         sendEmail({
+  //           to: updatedSurvey.user.email,
+  //           subject: "Survey Rejected",
+  //           text: `Your survey "${updatedSurvey.title}" has been rejected. Please review the survey and make the necessary changes before resubmitting.`,
+  //         }).catch((err) =>
+  //           console.error("❌ Survey rejection email to owner failed:", err),
+  //         );
+  //       }
+
+  //       // 📧 Notify admins
+  //       admins
+  //         .filter((admin) => admin.email)
+  //         .forEach((admin) => {
+  //           sendEmail({
+  //             to: admin.email!,
+  //             subject: "Survey Rejection Notification",
+  //             text: `The survey "${updatedSurvey.title}" (ID: ${updatedSurvey.id}) has been marked as REJECTED by ${updatedSurvey.user?.rejectedBy}`,
+  //           }).catch((err) =>
+  //             console.error(
+  //               `❌ Survey rejection email to admin ${admin.email} failed:`,
+  //               err,
+  //             ),
+  //           );
+  //         });
+  //     }
+
+  //     if (updateSurveyDto.status === "PENDING") {
+  //       const admins = await this.prisma.user.findMany({
+  //         where: { role: 'Admin' },
+  //         select: { id: true, email: true },
+  //       });
+
+  //       const adminIds = admins.map((a) => a.id);
+
+  //       // 🔔 Send in-app notification
+  //       if (adminIds.length) {
+  //         this.notificationService.broadcast(adminIds, {
+  //           title: 'Survey Pending Approval',
+  //           message: `A survey "${updatedSurvey.title}" is awaiting approval.`,
+  //           type: 'survey',
+  //         }).catch((err) => console.error('❌ Admin broadcast failed:', err));
+  //       }
+
+  //       // 📧 Send email to admins (non-blocking)
+  //       admins
+  //         .filter((a) => a.email)
+  //         .forEach((admin) => {
+  //           sendEmail({
+  //             to: admin.email!,
+  //             subject: 'Survey Pending Approval',
+  //             text: `A survey "${updatedSurvey.title}" has been submitted and is awaiting your approval.`,
+  //           }).catch((err) => console.error(`❌ Admin email failed for ${admin.email}:`, err));
+  //         });
+  //     }
+  //     return updatedSurvey;
+  //   } catch (error) {
+  //     console.error(`Failed to update survey with ID ${id}:`, error);
+  //     if (error instanceof HttpException) throw error;
+  //     throw new Error(`Could not update survey with ID ${id}: ${error?.message || error}`);
+  //   }
+  // }
+
+  async update(
+    id: string,
+    updateSurveyDto: UpdateSurveyDto,
+    userId?: number,
+  ) {
     await this.validateAndProcessAudienceAndInterests(updateSurveyDto);
-    const { sections, audienceOccupation, audienceState, surveyInterestIds, maxResponse, price, ...surveyData } = updateSurveyDto;
+
+    const {
+      sections,
+      audienceOccupation,
+      audienceState,
+      surveyInterestIds,
+      maxResponse,
+      price,
+      ...surveyData
+    } = updateSurveyDto;
+
     try {
       const existingSurvey = await this.prisma.survey.findUnique({
         where: isNaN(Number(id)) ? { slug: id } : { id: Number(id) },
-        include: { surveyInterests: true },
+        include: {
+          surveyInterests: true,
+        },
       });
-      if (!existingSurvey) throw new NotFoundException('Survey not found');
+
+      if (!existingSurvey) {
+        throw new NotFoundException('Survey not found');
+      }
+
+      const isPublishing = updateSurveyDto.status === 'PUBLISHED';
+      const isRejecting = updateSurveyDto.status === 'REJECTED';
+
+      // Approval/rejection must be attributed to the authenticated user.
+      if ((isPublishing || isRejecting) && userId == null) {
+        throw new BadRequestException(
+          'The authenticated user ID is required to approve or reject a survey.',
+        );
+      }
+
+      // Only send rejection emails when the survey transitions to REJECTED.
+      const newlyRejected =
+        isRejecting && existingSurvey.status !== 'REJECTED';
 
       const updatedSurvey = await this.prisma.survey.update({
         where: { id: existingSurvey.id },
         data: {
           ...surveyData,
+
           ...(audienceOccupation !== undefined && {
-            audienceOccupation: audienceOccupation ? JSON.stringify(audienceOccupation) : null,
+            audienceOccupation: audienceOccupation
+              ? JSON.stringify(audienceOccupation)
+              : null,
           }),
+
           ...(audienceState !== undefined && {
-            audienceState: audienceState ? JSON.stringify(audienceState) : null,
+            audienceState: audienceState
+              ? JSON.stringify(audienceState)
+              : null,
           }),
+
           ...(price !== undefined && {
             price: parseFloat(price as string),
+          }),
+
+          // Record the authenticated approver.
+          ...(isPublishing && {
+            approvedById: userId!,
+            rejectedById: null,
+            rejectionReason: null,
+          }),
+
+          // Record the authenticated rejector.
+          ...(isRejecting && {
+            rejectedById: userId!,
+            approvedById: null,
           }),
         },
         include: {
           user: true,
+          approvedBy: true,
+          rejectedBy: true,
           surveyInterests: true,
-        }
+        },
       });
 
+      // Update survey interests if provided.
       if (surveyInterestIds) {
-        const existingIds = existingSurvey.surveyInterests.map((i) => i.id);
-        const toConnect = surveyInterestIds.filter((x) => !existingIds.includes(x)).map((id) => ({ id }));
-        const toDisconnect = existingIds.filter((x) => !surveyInterestIds.includes(x)).map((id) => ({ id }));
+        const existingIds = existingSurvey.surveyInterests.map(
+          (interest) => interest.id,
+        );
+
+        const toConnect = surveyInterestIds
+          .filter((interestId) => !existingIds.includes(interestId))
+          .map((interestId) => ({ id: interestId }));
+
+        const toDisconnect = existingIds
+          .filter((interestId) => !surveyInterestIds.includes(interestId))
+          .map((interestId) => ({ id: interestId }));
+
         const reUpdatedSurvey = await this.prisma.survey.update({
           where: { id: existingSurvey.id },
           data: {
@@ -793,46 +1051,66 @@ export class SurveyService {
           },
           include: {
             user: true,
+            approvedBy: true,
+            rejectedBy: true,
             surveyInterests: true,
-          }
+          },
         });
+
         Object.assign(updatedSurvey, reUpdatedSurvey);
       }
-      if (updateSurveyDto.status === "PUBLISHED") {
-        if (updatedSurvey?.user?.email) {
+
+      // ==========================================
+      // PUBLISHED: Notify owner and target audience
+      // ==========================================
+      if (isPublishing) {
+        if (updatedSurvey.user?.email) {
           sendEmail({
             to: updatedSurvey.user.email,
             subject: 'Survey Published',
             text: `Your survey "${updatedSurvey.title}" has been approved and published.`,
-          }).catch((err) => console.error('❌ Email failed:', err));
+          }).catch((err) =>
+            console.error('❌ Email failed:', err),
+          );
         }
 
         let userIds: number[] = [];
 
         if (updatedSurvey.targetAudience === 'specific') {
-          // Specific Audience: matches occupation and stateOfResidence
           let targetedStates: string[] = [];
           let targetedOccupations: string[] = [];
 
           try {
             if (updatedSurvey.audienceState) {
               const parsed = JSON.parse(updatedSurvey.audienceState);
-              targetedStates = Array.isArray(parsed) ? parsed.map(s => s.toLowerCase().trim()) : [parsed.toLowerCase().trim()];
+
+              targetedStates = Array.isArray(parsed)
+                ? parsed.map((state) => String(state).toLowerCase().trim())
+                : [String(parsed).toLowerCase().trim()];
             }
           } catch {
             if (updatedSurvey.audienceState) {
-              targetedStates = [updatedSurvey.audienceState.toLowerCase().trim()];
+              targetedStates = [
+                updatedSurvey.audienceState.toLowerCase().trim(),
+              ];
             }
           }
 
           try {
             if (updatedSurvey.audienceOccupation) {
               const parsed = JSON.parse(updatedSurvey.audienceOccupation);
-              targetedOccupations = Array.isArray(parsed) ? parsed.map(o => o.toLowerCase().trim()) : [parsed.toLowerCase().trim()];
+
+              targetedOccupations = Array.isArray(parsed)
+                ? parsed.map((occupation) =>
+                  String(occupation).toLowerCase().trim(),
+                )
+                : [String(parsed).toLowerCase().trim()];
             }
           } catch {
             if (updatedSurvey.audienceOccupation) {
-              targetedOccupations = [updatedSurvey.audienceOccupation.toLowerCase().trim()];
+              targetedOccupations = [
+                updatedSurvey.audienceOccupation.toLowerCase().trim(),
+              ];
             }
           }
 
@@ -841,69 +1119,165 @@ export class SurveyService {
               id: true,
               stateOfResidence: true,
               occupation: true,
-            }
+            },
           });
 
-          userIds = allUsers.filter(u => {
-            const userState = u.stateOfResidence?.toLowerCase().trim();
-            const userOcc = u.occupation?.toLowerCase().trim();
+          userIds = allUsers
+            .filter((user) => {
+              const userState = user.stateOfResidence
+                ?.toLowerCase()
+                .trim();
 
-            const stateMatches = targetedStates.length === 0 || (userState && targetedStates.includes(userState));
-            const occMatches = targetedOccupations.length === 0 || (userOcc && targetedOccupations.includes(userOcc));
+              const userOccupation = user.occupation
+                ?.toLowerCase()
+                .trim();
 
-            return stateMatches && occMatches;
-          }).map(u => u.id);
+              const stateMatches =
+                targetedStates.length === 0 ||
+                (!!userState && targetedStates.includes(userState));
 
+              const occupationMatches =
+                targetedOccupations.length === 0 ||
+                (!!userOccupation &&
+                  targetedOccupations.includes(userOccupation));
+
+              return stateMatches && occupationMatches;
+            })
+            .map((user) => user.id);
         } else {
-          // General Audience: send/broadcast to all users
           const users = await this.prisma.user.findMany({
-            select: { id: true }
+            select: { id: true },
           });
-          userIds = users.map((u) => u.id);
+
+          userIds = users.map((user) => user.id);
         }
 
         if (userIds.length > 0) {
-          this.notificationService.broadcast(userIds, {
-            title: 'New Survey Available',
-            message: `A new survey "${updatedSurvey.title}" was just published.`,
-            type: 'survey',
-          }).catch((err) => console.error('❌ Broadcast failed:', err));
+          this.notificationService
+            .broadcast(userIds, {
+              title: 'New Survey Available',
+              message: `A new survey "${updatedSurvey.title}" was just published.`,
+              type: 'survey',
+            })
+            .catch((err) =>
+              console.error('❌ Broadcast failed:', err),
+            );
         }
-      };
+      }
 
-      if (updateSurveyDto.status === "PENDING") {
+      // ==========================================
+      // REJECTED: Notify owner and admins
+      // ==========================================
+      if (newlyRejected) {
+        const rejectorName =
+          [
+            updatedSurvey.rejectedBy?.firstName,
+            updatedSurvey.rejectedBy?.lastName,
+          ]
+            .filter(Boolean)
+            .join(' ') ||
+          updatedSurvey.rejectedBy?.username ||
+          updatedSurvey.rejectedBy?.email ||
+          'An administrator';
+
+        const reason = updatedSurvey.rejectionReason
+          ? `\n\nReason for rejection: ${updatedSurvey.rejectionReason}`
+          : '';
+
+        // Email the survey owner.
+        if (updatedSurvey.user?.email) {
+          sendEmail({
+            to: updatedSurvey.user.email,
+            subject: 'Survey Rejected',
+            text: `Your survey "${updatedSurvey.title}" has been rejected by ${rejectorName}.${reason}\n\nPlease review the feedback and make the necessary changes before resubmitting.`,
+          }).catch((err) =>
+            console.error(
+              '❌ Survey rejection email to owner failed:',
+              err,
+            ),
+          );
+        }
+
+        // Find administrators.
         const admins = await this.prisma.user.findMany({
           where: { role: 'Admin' },
-          select: { id: true, email: true },
+          select: {
+            id: true,
+            email: true,
+          },
         });
 
-        const adminIds = admins.map((a) => a.id);
+        // Email administrators, including the rejector's name.
+        admins
+          .filter((admin) => admin.email)
+          .forEach((admin) => {
+            sendEmail({
+              to: admin.email!,
+              subject: 'Survey Rejection Notification',
+              text: `The survey "${updatedSurvey.title}" (ID: ${updatedSurvey.id}) was rejected by ${rejectorName}.${reason}`,
+            }).catch((err) =>
+              console.error(
+                `❌ Survey rejection email to admin ${admin.email} failed:`,
+                err,
+              ),
+            );
+          });
+      }
 
-        // 🔔 Send in-app notification
-        if (adminIds.length) {
-          this.notificationService.broadcast(adminIds, {
-            title: 'Survey Pending Approval',
-            message: `A survey "${updatedSurvey.title}" is awaiting approval.`,
-            type: 'survey',
-          }).catch((err) => console.error('❌ Admin broadcast failed:', err));
+      // ==========================================
+      // PENDING: Notify administrators
+      // ==========================================
+      if (updateSurveyDto.status === 'PENDING') {
+        const admins = await this.prisma.user.findMany({
+          where: { role: 'Admin' },
+          select: {
+            id: true,
+            email: true,
+          },
+        });
+
+        const adminIds = admins.map((admin) => admin.id);
+
+        if (adminIds.length > 0) {
+          this.notificationService
+            .broadcast(adminIds, {
+              title: 'Survey Pending Approval',
+              message: `A survey "${updatedSurvey.title}" is awaiting your approval.`,
+              type: 'survey',
+            })
+            .catch((err) =>
+              console.error('❌ Admin broadcast failed:', err),
+            );
         }
 
-        // 📧 Send email to admins (non-blocking)
         admins
-          .filter((a) => a.email)
+          .filter((admin) => admin.email)
           .forEach((admin) => {
             sendEmail({
               to: admin.email!,
               subject: 'Survey Pending Approval',
               text: `A survey "${updatedSurvey.title}" has been submitted and is awaiting your approval.`,
-            }).catch((err) => console.error(`❌ Admin email failed for ${admin.email}:`, err));
+            }).catch((err) =>
+              console.error(
+                `❌ Admin email failed for ${admin.email}:`,
+                err,
+              ),
+            );
           });
       }
+
       return updatedSurvey;
     } catch (error) {
       console.error(`Failed to update survey with ID ${id}:`, error);
-      if (error instanceof HttpException) throw error;
-      throw new Error(`Could not update survey with ID ${id}: ${error?.message || error}`);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new Error(
+        `Could not update survey with ID ${id}: ${error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 

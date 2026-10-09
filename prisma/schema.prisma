@@ -156,12 +156,14 @@ model User {
   referralsMade                Referral[]       @relation("UserReferrals")
   responses                    Response[]
   sessions                     Session[]
-  surveys                      Survey[]
+  surveys                      Survey[]         @relation("SurveyOwner")
   assignedTickets              Ticket[]         @relation("AssignedTickets")
   createdTickets               Ticket[]         @relation("CreatedTickets")
   wallet                       Wallet?
   Withdrawal                   Withdrawal[]
   surveyInterest               SurveyInterest[] @relation("UserInterests")
+  approvedSurveys              Survey[]         @relation("SurveyApprovedBy")
+  rejectedSurveys              Survey[]         @relation("SurveyRejectedBy")
 }
 
 model Account {
@@ -199,39 +201,43 @@ model Session {
 }
 
 model Survey {
-  id                 Int              @id @default(autoincrement())
-  userId             Int
-  title              String?
-  description        String?
-  status             SurveyStatus     @default(DRAFT)
-  requireResponse    Boolean?         @default(false)
-  minResponse        Int?
-  startDate          DateTime?
-  endDate            DateTime?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  surveyPurpose      String?
-  slug               String?          @unique
-  rejectionReason    String?
-  audienceOccupation String?
-  audienceState      String?
-  modeOfCollection   String?
-  questionNumber     String?
-  support            String?
-  targetAudience     String?
-  timeline           String?
-  price              Float?
-  estimatedTimeMinutes Int?
-  recruitmentDifficulty Int?            @default(1)
-  cognitiveEffort       Int?            @default(1)
-  participationRequirements Int?        @default(1)
-  dataSensitivity       Int?            @default(1)
-  calculatedLevel       Int?            @default(1)
-  calculatedPoints      Int?            @default(100)
-  responses          Response[]
-  sections           Section[]        @relation("SurveySections")
-  user               User             @relation(fields: [userId], references: [id])
-  surveyInterests    SurveyInterest[] @relation("SurveyInterests")
+  id                        Int              @id @default(autoincrement())
+  userId                    Int
+  title                     String?
+  description               String?
+  status                    SurveyStatus     @default(DRAFT)
+  requireResponse           Boolean?         @default(false)
+  minResponse               Int?
+  startDate                 DateTime?
+  endDate                   DateTime?
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+  surveyPurpose             String?
+  slug                      String?          @unique
+  rejectionReason           String?
+  audienceOccupation        String?
+  audienceState             String?
+  modeOfCollection          String?
+  questionNumber            String?
+  support                   String?
+  targetAudience            String?
+  timeline                  String?
+  price                     Float?
+  estimatedTimeMinutes      Int?
+  recruitmentDifficulty     Int?             @default(1)
+  cognitiveEffort           Int?             @default(1)
+  participationRequirements Int?             @default(1)
+  dataSensitivity           Int?             @default(1)
+  calculatedLevel           Int?             @default(1)
+  calculatedPoints          Int?             @default(100)
+  user                      User             @relation("SurveyOwner", fields: [userId], references: [id])
+  approvedById              Int?
+  approvedBy                User?            @relation("SurveyApprovedBy", fields: [approvedById], references: [id])
+  rejectedById              Int?
+  rejectedBy                User?            @relation("SurveyRejectedBy", fields: [rejectedById], references: [id])
+  responses                 Response[]
+  sections                  Section[]        @relation("SurveySections")
+  surveyInterests           SurveyInterest[] @relation("SurveyInterests")
 }
 
 model Section {
@@ -418,4 +424,3 @@ model SurveyRewardLog {
   @@index([userId])
   @@index([surveyId])
 }
-
