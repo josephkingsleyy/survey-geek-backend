@@ -162,8 +162,6 @@ model User {
   wallet                       Wallet?
   Withdrawal                   Withdrawal[]
   surveyInterest               SurveyInterest[] @relation("UserInterests")
-  approvedSurveys              Survey[]         @relation("SurveyApprovedBy")
-  rejectedSurveys              Survey[]         @relation("SurveyRejectedBy")
 }
 
 model Account {
@@ -223,20 +221,16 @@ model Survey {
   targetAudience            String?
   timeline                  String?
   price                     Float?
-  estimatedTimeMinutes      Int?
-  recruitmentDifficulty     Int?             @default(1)
-  cognitiveEffort           Int?             @default(1)
-  participationRequirements Int?             @default(1)
-  dataSensitivity           Int?             @default(1)
   calculatedLevel           Int?             @default(1)
   calculatedPoints          Int?             @default(100)
-  user                      User             @relation("SurveyOwner", fields: [userId], references: [id])
-  approvedById              Int?
-  approvedBy                User?            @relation("SurveyApprovedBy", fields: [approvedById], references: [id])
-  rejectedById              Int?
-  rejectedBy                User?            @relation("SurveyRejectedBy", fields: [rejectedById], references: [id])
+  cognitiveEffort           Int?             @default(1)
+  dataSensitivity           Int?             @default(1)
+  estimatedTimeMinutes      Int?
+  participationRequirements Int?             @default(1)
+  recruitmentDifficulty     Int?             @default(1)
   responses                 Response[]
   sections                  Section[]        @relation("SurveySections")
+  user                      User             @relation("SurveyOwner", fields: [userId], references: [id])
   surveyInterests           SurveyInterest[] @relation("SurveyInterests")
 }
 
@@ -262,9 +256,6 @@ model Question {
   scaleMin        String?
   scaleMax        String?
   allowUpload     Boolean?
-  allowTime       Boolean?       @default(false)
-  allowedRange    String?        @default("ANY_DATE")
-  timeFormat      String?        @default("24_HOUR")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   userId          Int?
@@ -279,6 +270,9 @@ model Question {
   matrixId        Int?           @unique
   status          QuestionStatus @default(DRAFT)
   branchCondition String?
+  allowTime       Boolean?       @default(false)
+  allowedRange    String?        @default("ANY_DATE")
+  timeFormat      String?        @default("24_HOUR")
   matrix          MatrixField?   @relation(fields: [matrixId], references: [id])
   section         Section        @relation("SectionQuestions", fields: [sectionId], references: [id])
   user            User?          @relation(fields: [userId], references: [id])
@@ -354,6 +348,25 @@ model Withdrawal {
   user          User   @relation(fields: [userId], references: [id])
 }
 
+model SurveyPointConfig {
+  id        Int      @id @default(1)
+  weights   Json
+  levels    Json
+  updatedAt DateTime @updatedAt
+}
+
+model SurveyRewardLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  surveyId  Int
+  points    Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, surveyId])
+  @@index([userId])
+  @@index([surveyId])
+}
+
 enum TicketStatus {
   OPEN
   IN_PROGRESS
@@ -385,7 +398,6 @@ enum QuestionStatus {
 
 enum QuestionType {
   TEXT
-  LONG_TEXT
   SINGLE_CHOICE
   MULTIPLE_CHOICE
   RATING
@@ -396,6 +408,7 @@ enum QuestionType {
   MATRIX
   DATE_TIME
   TIME
+  LONG_TEXT
 }
 
 enum RewardEvent {
@@ -404,23 +417,4 @@ enum RewardEvent {
   SURVEY_RESPONSE
   ADMIN_ADJUSTMENT
   POINTS_PURCHASE
-}
-
-model SurveyPointConfig {
-  id        Int      @id @default(1)
-  weights   Json
-  levels    Json
-  updatedAt DateTime @updatedAt
-}
-
-model SurveyRewardLog {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  surveyId  Int
-  points    Int
-  createdAt DateTime @default(now())
-
-  @@unique([userId, surveyId])
-  @@index([userId])
-  @@index([surveyId])
 }
