@@ -162,6 +162,8 @@ model User {
   wallet                       Wallet?
   Withdrawal                   Withdrawal[]
   surveyInterest               SurveyInterest[] @relation("UserInterests")
+  approvedSurveys              Survey[]         @relation("SurveyApprovedBy")
+  rejectedSurveys              Survey[]         @relation("SurveyRejectedBy")
 }
 
 model Account {
@@ -231,6 +233,10 @@ model Survey {
   responses                 Response[]
   sections                  Section[]        @relation("SurveySections")
   user                      User             @relation("SurveyOwner", fields: [userId], references: [id])
+  approvedById              Int?
+  approvedBy                User?            @relation("SurveyApprovedBy", fields: [approvedById], references: [id])
+  rejectedById              Int?
+  rejectedBy                User?            @relation("SurveyRejectedBy", fields: [rejectedById], references: [id])
   surveyInterests           SurveyInterest[] @relation("SurveyInterests")
 }
 
