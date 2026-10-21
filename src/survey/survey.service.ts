@@ -1014,23 +1014,16 @@ export class SurveyService {
             price: parseFloat(price as string),
           }),
 
-          // Record approval and clear previous rejection metadata.
-          ...(isPublishing && {
-            approvedById: sub!,
-            rejectedById: null,
-            rejectionReason: null,
-          }),
-
-          // Record rejection and clear previous approval metadata.
-          ...(isRejecting && {
-            rejectedById: sub!,
-            approvedById: null,
+          // Record review decision metadata.
+          ...((isPublishing || isRejecting) && {
+            reviewerId: sub!,
+            reviewedAt: new Date(),
+            ...(isPublishing && { rejectionReason: null }),
           }),
         },
         include: {
           user: true,
-          approvedBy: true,
-          rejectedBy: true,
+          reviewer: true,
           surveyInterests: true,
         },
       });
@@ -1059,8 +1052,7 @@ export class SurveyService {
           },
           include: {
             user: true,
-            approvedBy: true,
-            rejectedBy: true,
+            reviewer: true,
             surveyInterests: true,
           },
         });
@@ -1183,13 +1175,13 @@ export class SurveyService {
       if (isRejecting) {
         const rejectorName =
           [
-            updatedSurvey.rejectedBy?.firstName,
-            updatedSurvey.rejectedBy?.lastName,
+            updatedSurvey.reviewer?.firstName,
+            updatedSurvey.reviewer?.lastName,
           ]
             .filter(Boolean)
             .join(' ') ||
-          updatedSurvey.rejectedBy?.username ||
-          updatedSurvey.rejectedBy?.email ||
+          updatedSurvey.reviewer?.username ||
+          updatedSurvey.reviewer?.email ||
           'An administrator';
 
         const reason = updatedSurvey.rejectionReason
