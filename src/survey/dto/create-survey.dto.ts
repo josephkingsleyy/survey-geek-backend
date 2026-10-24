@@ -244,4 +244,19 @@ export class CreateSurveyDto {
   @IsOptional()
   @IsInt()
   dataSensitivity?: number;
+
+  @ApiPropertyOptional({ example: 'Thank you for completing the survey.' })
+  @IsOptional()
+  @IsString()
+  feedbackTitle?: string;
+
+  @ApiPropertyOptional({ example: 'Your responses have been recorded successfully.' })
+  @IsOptional()
+  @IsString()
+  feedbackMessage?: string;
+
+  @ApiPropertyOptional({ example: true, default: true })
+  @IsOptional()
+  @IsBoolean()
+  showResponseSummary?: boolean;
 }

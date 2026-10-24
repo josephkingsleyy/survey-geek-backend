@@ -236,6 +236,9 @@ model Survey {
   reviewer                  User?            @relation("SurveyReviewer", fields: [reviewerId], references: [id])
   reviewedAt                DateTime?
   surveyInterests           SurveyInterest[] @relation("SurveyInterests")
+  feedbackTitle             String?
+  feedbackMessage           String?
+  showResponseSummary       Boolean?         @default(true)
 }
 
 model Section {
