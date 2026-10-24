@@ -86,6 +86,13 @@ export class MatrixFieldDto {
   data?: string[][];
 }
 
+export enum MultipleChoiceOptionSelectionRule {
+  ANY = 'ANY',
+  AT_LEAST = 'AT_LEAST',
+  AT_MOST = 'AT_MOST',
+  EXACTLY = 'EXACTLY',
+}
+
 export enum QuestionStatusDto {
   DRAFT = 'DRAFT',
   PUBLISH = 'PUBLISH',
@@ -147,6 +154,30 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsString()
   timeFormat?: string;
+
+  @ApiPropertyOptional({
+    example: 'ANY',
+    enum: MultipleChoiceOptionSelectionRule,
+    description: 'Selection rule for MULTIPLE_CHOICE options: ANY | AT_LEAST | AT_MOST | EXACTLY',
+  })
+  @IsOptional()
+  @IsString()
+  multipleChoiceOptionSelectionRule?: string;
+
+  @ApiPropertyOptional({ example: 2, description: 'Selection count when rule is EXACTLY, AT_LEAST, or AT_MOST' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionSelectionCount?: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Minimum number of selections' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionMinSelection?: number;
+
+  @ApiPropertyOptional({ example: 3, description: 'Maximum number of selections' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionMaxSelection?: number;
 
   @ApiPropertyOptional({ example: 'Rate from 1 to 5 stars.' })
   @IsOptional()

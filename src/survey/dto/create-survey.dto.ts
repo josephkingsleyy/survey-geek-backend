@@ -61,6 +61,30 @@ export class CreateQuestionAlongDto {
   @IsString()
   timeFormat?: string;
 
+  @ApiPropertyOptional({
+    example: 'ANY',
+    enum: ['ANY', 'AT_LEAST', 'AT_MOST', 'EXACTLY'],
+    description: 'Selection rule for MULTIPLE_CHOICE options: ANY | AT_LEAST | AT_MOST | EXACTLY',
+  })
+  @IsOptional()
+  @IsString()
+  multipleChoiceOptionSelectionRule?: string;
+
+  @ApiPropertyOptional({ example: 2, description: 'Selection count when rule is EXACTLY, AT_LEAST, or AT_MOST' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionSelectionCount?: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Minimum number of selections' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionMinSelection?: number;
+
+  @ApiPropertyOptional({ example: 3, description: 'Maximum number of selections' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionMaxSelection?: number;
+
   @ApiPropertyOptional({ example: 5 })
   @IsOptional()
   @IsInt()

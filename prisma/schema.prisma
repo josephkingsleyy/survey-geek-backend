@@ -277,6 +277,12 @@ model Question {
   allowTime       Boolean?       @default(false)
   allowedRange    String?        @default("ANY_DATE")
   timeFormat      String?        @default("24_HOUR")
+
+  multipleChoiceOptionSelectionRule  String?   // 'ANY' | 'AT_LEAST' | 'AT_MOST' | 'EXACTLY'
+  multipleChoiceOptionSelectionCount Int?
+  multipleChoiceOptionMinSelection   Int?
+  multipleChoiceOptionMaxSelection   Int?
+
   matrix          MatrixField?   @relation(fields: [matrixId], references: [id])
   section         Section        @relation("SectionQuestions", fields: [sectionId], references: [id])
   user            User?          @relation(fields: [userId], references: [id])
