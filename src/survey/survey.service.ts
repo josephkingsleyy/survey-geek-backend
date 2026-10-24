@@ -146,8 +146,6 @@ export class SurveyService {
                 timeFormat: q.timeFormat ?? '24_HOUR',
                 multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
                 multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
-                multipleChoiceOptionMinSelection: q.multipleChoiceOptionMinSelection ?? null,
-                multipleChoiceOptionMaxSelection: q.multipleChoiceOptionMaxSelection ?? null,
                 levels: q.levels ?? 5,
                 symbol: q.symbol ?? 'star',
                 statements: q.statements ?? [],
@@ -1388,8 +1386,6 @@ export class SurveyService {
                   timeFormat: q.timeFormat ?? '24_HOUR',
                   multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
                   multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
-                  multipleChoiceOptionMinSelection: q.multipleChoiceOptionMinSelection ?? null,
-                  multipleChoiceOptionMaxSelection: q.multipleChoiceOptionMaxSelection ?? null,
                   levels: q.levels ?? 5,
                   symbol: q.symbol ?? 'star',
                   statements: q.statements ?? [],
@@ -1417,8 +1413,6 @@ export class SurveyService {
                   timeFormat: q.timeFormat ?? '24_HOUR',
                   multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
                   multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
-                  multipleChoiceOptionMinSelection: q.multipleChoiceOptionMinSelection ?? null,
-                  multipleChoiceOptionMaxSelection: q.multipleChoiceOptionMaxSelection ?? null,
                   levels: q.levels ?? 5,
                   symbol: q.symbol ?? 'star',
                   statements: q.statements ?? [],
@@ -1534,8 +1528,6 @@ export class SurveyService {
               scaleMax: q.scaleMax,
               multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
               multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
-              multipleChoiceOptionMinSelection: q.multipleChoiceOptionMinSelection ?? null,
-              multipleChoiceOptionMaxSelection: q.multipleChoiceOptionMaxSelection ?? null,
             };
 
             if (q.id && q.id < 2147483647) {

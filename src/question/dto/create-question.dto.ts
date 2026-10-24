@@ -169,16 +169,6 @@ export class CreateQuestionDto {
   @IsInt()
   multipleChoiceOptionSelectionCount?: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'Minimum number of selections' })
-  @IsOptional()
-  @IsInt()
-  multipleChoiceOptionMinSelection?: number;
-
-  @ApiPropertyOptional({ example: 3, description: 'Maximum number of selections' })
-  @IsOptional()
-  @IsInt()
-  multipleChoiceOptionMaxSelection?: number;
-
   @ApiPropertyOptional({ example: 'Rate from 1 to 5 stars.' })
   @IsOptional()
   @IsString()

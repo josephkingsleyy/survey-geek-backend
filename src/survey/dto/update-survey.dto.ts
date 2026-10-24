@@ -97,16 +97,6 @@ export class UpdateQuestionDto {
   @IsInt()
   multipleChoiceOptionSelectionCount?: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'Minimum number of selections' })
-  @IsOptional()
-  @IsInt()
-  multipleChoiceOptionMinSelection?: number;
-
-  @ApiPropertyOptional({ example: 3, description: 'Maximum number of selections' })
-  @IsOptional()
-  @IsInt()
-  multipleChoiceOptionMaxSelection?: number;
-
   @ApiPropertyOptional({ example: 5 })
   @IsOptional()
   @IsInt()
