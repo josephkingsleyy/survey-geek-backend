@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
   BadRequestException,
   HttpException,
@@ -1021,6 +1022,21 @@ export class SurveyService {
             reviewerId: sub!,
             reviewedAt: new Date(),
             ...(isPublishing && { rejectionReason: null }),
+            ...(isRejecting && {
+              rejectionHistory: [
+                ...((Array.isArray((existingSurvey as any).rejectionHistory)
+                  ? ((existingSurvey as any).rejectionHistory as any[])
+                  : [])),
+                {
+                  id: randomUUID(),
+                  reason:
+                    surveyData.rejectionReason ||
+                    'Survey rejected due to not meeting required standards!',
+                  reviewerId: sub,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }),
           }),
         },
         include: {

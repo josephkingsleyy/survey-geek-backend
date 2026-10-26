@@ -214,6 +214,7 @@ model Survey {
   surveyPurpose             String?
   slug                      String?          @unique
   rejectionReason           String?
+  rejectionHistory          Json?            @default("[]")
   audienceOccupation        String?
   audienceState             String?
   modeOfCollection          String?
@@ -280,6 +281,9 @@ model Question {
   allowTime       Boolean?       @default(false)
   allowedRange    String?        @default("ANY_DATE")
   timeFormat      String?        @default("24_HOUR")
+
+  reviewComment                      String?
+  reviewComments                     Json?          @default("[]")
 
   multipleChoiceOptionSelectionRule  String?   // 'ANY' | 'AT_LEAST' | 'AT_MOST' | 'EXACTLY'
   multipleChoiceOptionSelectionCount Int?

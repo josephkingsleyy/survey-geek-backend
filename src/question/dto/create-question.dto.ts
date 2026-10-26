@@ -226,4 +226,14 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsString()
   branchCondition?: string;
+
+  @ApiPropertyOptional({ example: 'Please revise this question text.' })
+  @IsOptional()
+  @IsString()
+  reviewComment?: string;
+
+  @ApiPropertyOptional({ example: [], description: 'Review comments trail for this question' })
+  @IsOptional()
+  @IsArray()
+  reviewComments?: any[];
 }

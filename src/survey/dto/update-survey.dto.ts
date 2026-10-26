@@ -333,4 +333,9 @@ export class UpdateSurveyDto {
   @IsOptional()
   @IsBoolean()
   showResponseSummary?: boolean;
+
+  @ApiPropertyOptional({ example: [], description: 'Rejection history audit trail' })
+  @IsOptional()
+  @IsArray()
+  rejectionHistory?: any[];
 }
