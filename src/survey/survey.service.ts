@@ -221,6 +221,7 @@ export class SurveyService {
       pending?: any;
       draft?: any;
     } = {},
+    user?: any,
   ) {
     const skip = (page - 1) * limit;
     const {
@@ -265,20 +266,39 @@ export class SurveyService {
       };
     }
 
-    const whereClause = { ...baseWhere };
+    const currentUserId = user?.userId || user?.sub || user?.id;
+    const whereClause: any = { ...baseWhere };
 
     if (status) {
       whereClause.status = status;
+      if (status === SurveyStatus.DRAFT && currentUserId) {
+        whereClause.userId = currentUserId;
+      } else if (status === SurveyStatus.TRASH && currentUserId) {
+        whereClause.userId = currentUserId;
+      }
     } else if (published === 'true' || published === true) {
       whereClause.status = SurveyStatus.PUBLISHED;
     } else if (completed === 'true' || completed === true) {
       whereClause.status = SurveyStatus.COMPLETED;
     } else if (trash === 'true' || trash === true) {
       whereClause.status = SurveyStatus.TRASH;
+      if (currentUserId) whereClause.userId = currentUserId;
     } else if (pending === 'true' || pending === true) {
       whereClause.status = SurveyStatus.PENDING;
     } else if (draft === 'true' || draft === true) {
       whereClause.status = SurveyStatus.DRAFT;
+      if (currentUserId) whereClause.userId = currentUserId;
+    } else {
+      // "All Surveys" tab: exclude TRASH, and exclude other users' DRAFTs
+      whereClause.status = { not: SurveyStatus.TRASH };
+      whereClause.AND = [
+        {
+          OR: [
+            { status: { not: SurveyStatus.DRAFT } },
+            ...(currentUserId ? [{ userId: currentUserId, status: SurveyStatus.DRAFT }] : []),
+          ],
+        },
+      ];
     }
 
 
@@ -301,7 +321,7 @@ export class SurveyService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.survey.count(),
+      this.prisma.survey.count({ where: whereClause }),
 
       this.prisma.survey.groupBy({
         by: ['status'],
@@ -525,14 +545,59 @@ export class SurveyService {
   // survey.service.ts
 
   async getSurveyCounts(user: any) {
+    const currentUserId = user?.userId || user?.sub || user?.id;
 
-    // Admin sees everything
-    const whereClause =
-      user.role === 'Admin'
-        ? {}
-        : {
-          userId: user?.userId || user?.sub,
-        };
+    if (user?.role === 'Admin') {
+      const [allStatusCounts, adminDraftCount, adminTrashCount] = await Promise.all([
+        this.prisma.survey.groupBy({
+          by: ['status'],
+          where: {
+            status: { in: [SurveyStatus.PUBLISHED, SurveyStatus.COMPLETED, SurveyStatus.PENDING, SurveyStatus.REJECTED] },
+          },
+          _count: { status: true },
+        }),
+        this.prisma.survey.count({
+          where: { status: SurveyStatus.DRAFT, userId: currentUserId },
+        }),
+        this.prisma.survey.count({
+          where: { status: SurveyStatus.TRASH, userId: currentUserId },
+        }),
+      ]);
+
+      const countMap = {
+        draftCount: adminDraftCount,
+        publishedCount: 0,
+        pausedCount: 0,
+        completedCount: 0,
+        pendingCount: 0,
+        trashedCount: adminTrashCount,
+      };
+
+      const statusKeyMap = {
+        PUBLISHED: 'publishedCount',
+        COMPLETED: 'completedCount',
+        PENDING: 'pendingCount',
+      };
+
+      allStatusCounts.forEach((item) => {
+        const key = statusKeyMap[item.status];
+        if (key) {
+          countMap[key] = item._count.status;
+        }
+      });
+
+      const rejectedCount = allStatusCounts.find((s) => s.status === SurveyStatus.REJECTED)?._count?.status || 0;
+      const total = countMap.publishedCount + countMap.completedCount + countMap.pendingCount + rejectedCount + countMap.draftCount;
+
+      return {
+        total,
+        ...countMap,
+      };
+    }
+
+    const whereClause = {
+      userId: currentUserId,
+    };
 
     const statusCounts = await this.prisma.survey.groupBy({
       by: ['status'],
@@ -1640,14 +1705,54 @@ export class SurveyService {
       throw new NotFoundException(`Survey with ID ${id} not found`);
     }
 
-    // delete children first
-    await this.prisma.section.deleteMany({ where: { surveyId: id } });
-    await this.prisma.question.deleteMany({
-      where: { section: { surveyId: id } },
-    });
+    return this.prisma.(async (tx) => {
+      // 1. Delete responses belonging to this survey
+      await tx.response.deleteMany({ where: { surveyId: id } });
 
-    // now delete survey
-    return this.prisma.survey.delete({ where: { id } });
+      // 2. Find sections
+      const sections = await tx.section.findMany({
+        where: { surveyId: id },
+        select: { id: true },
+      });
+      const sectionIds = sections.map((s) => s.id);
+
+      if (sectionIds.length > 0) {
+        // 3. Find questions and matrix fields
+        const questions = await tx.question.findMany({
+          where: { sectionId: { in: sectionIds } },
+          select: { id: true, matrixId: true },
+        });
+
+        const matrixIds = questions
+          .map((q) => q.matrixId)
+          .filter((m): m is number => m !== null && m !== undefined);
+
+        // 4. Delete questions first (child of section, parent of matrixId)
+        await tx.question.deleteMany({
+          where: { sectionId: { in: sectionIds } },
+        });
+
+        // 5. Delete matrix fields
+        if (matrixIds.length > 0) {
+          await tx.matrixField.deleteMany({
+            where: { id: { in: matrixIds } },
+          });
+        }
+
+        // 6. Delete sections (child of survey)
+        await tx.section.deleteMany({
+          where: { surveyId: id },
+        });
+      }
+
+      // 7. Delete reward logs
+      await tx.surveyRewardLog.deleteMany({
+        where: { surveyId: id },
+      });
+
+      // 8. Finally delete survey
+      return tx.survey.delete({ where: { id } });
+    });
   }
 
   async publishSurvey(id: number, userId: number) {

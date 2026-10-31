@@ -78,6 +78,7 @@ export class SurveyController {
           pending,
           draft,
         },
+        user,
       );
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
