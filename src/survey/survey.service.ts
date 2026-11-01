@@ -1685,6 +1685,12 @@ export class SurveyService {
       );
     }
 
+    if (survey.status === SurveyStatus.PENDING) {
+      throw new BadRequestException(
+        "Surveys pending review cannot be moved to trash",
+      );
+    }
+
     if (survey.status == SurveyStatus.TRASH) {
       return this.prisma.survey.update({
         where: { id },
@@ -1711,7 +1717,9 @@ export class SurveyService {
     const validToTrash = surveys
       .filter(
         (s) =>
-          s.status !== SurveyStatus.PUBLISHED && s.status !== SurveyStatus.TRASH,
+          s.status !== SurveyStatus.PUBLISHED &&
+          s.status !== SurveyStatus.PENDING &&
+          s.status !== SurveyStatus.TRASH,
       )
       .map((s) => s.id);
 
