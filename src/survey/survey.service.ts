@@ -1681,23 +1681,71 @@ export class SurveyService {
 
     if (survey.status === SurveyStatus.PUBLISHED) {
       throw new BadRequestException(
-        'Published surveys cannot be moved to trash',
+        "Published surveys cannot be moved to trash",
       );
     }
 
     if (survey.status == SurveyStatus.TRASH) {
       return this.prisma.survey.update({
         where: { id },
-        data: { status: 'DRAFT', updatedAt: new Date() },
+        data: { status: "DRAFT", updatedAt: new Date() },
       });
     } else {
       return this.prisma.survey.update({
         where: { id },
-        data: { status: 'TRASH', updatedAt: new Date() },
+        data: { status: "TRASH", updatedAt: new Date() },
       });
     }
   }
 
+  async bulkSoftDelete(ids: number[]) {
+    if (!ids || ids.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    const surveys = await this.prisma.survey.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, status: true },
+    });
+
+    const validToTrash = surveys
+      .filter(
+        (s) =>
+          s.status !== SurveyStatus.PUBLISHED && s.status !== SurveyStatus.TRASH,
+      )
+      .map((s) => s.id);
+
+    const validToDraft = surveys
+      .filter((s) => s.status === SurveyStatus.TRASH)
+      .map((s) => s.id);
+
+    return this.prisma.$transaction(async (tx) => {
+      if (validToTrash.length > 0) {
+        await tx.survey.updateMany({
+          where: { id: { in: validToTrash } },
+          data: { status: SurveyStatus.TRASH, updatedAt: new Date() },
+        });
+      }
+
+      if (validToDraft.length > 0) {
+        await tx.survey.updateMany({
+          where: { id: { in: validToDraft } },
+          data: { status: SurveyStatus.DRAFT, updatedAt: new Date() },
+        });
+      }
+
+      const publishedCount = surveys.filter(
+        (s) => s.status === SurveyStatus.PUBLISHED,
+      ).length;
+
+      return {
+        success: true,
+        trashedCount: validToTrash.length,
+        restoredCount: validToDraft.length,
+        ignoredPublishedCount: publishedCount,
+      };
+    });
+  }
 
   async remove(id: number) {
     const survey = await this.prisma.survey.findUnique({ where: { id } });
@@ -1705,7 +1753,7 @@ export class SurveyService {
       throw new NotFoundException(`Survey with ID ${id} not found`);
     }
 
-    return this.prisma.(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       // 1. Delete responses belonging to this survey
       await tx.response.deleteMany({ where: { surveyId: id } });
 
@@ -1725,7 +1773,7 @@ export class SurveyService {
 
         const matrixIds = questions
           .map((q) => q.matrixId)
-          .filter((m): m is number => m !== null && m !== undefined);
+          .filter((m) => m !== null && m !== undefined);
 
         // 4. Delete questions first (child of section, parent of matrixId)
         await tx.question.deleteMany({
@@ -1752,6 +1800,67 @@ export class SurveyService {
 
       // 8. Finally delete survey
       return tx.survey.delete({ where: { id } });
+    });
+  }
+
+  async bulkRemove(ids: number[]) {
+    if (!ids || ids.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Delete all responses for these surveys
+      await tx.response.deleteMany({
+        where: { surveyId: { in: ids } },
+      });
+
+      // 2. Find all sections for these surveys
+      const sections = await tx.section.findMany({
+        where: { surveyId: { in: ids } },
+        select: { id: true },
+      });
+      const sectionIds = sections.map((s) => s.id);
+
+      if (sectionIds.length > 0) {
+        // 3. Find questions and their matrix fields
+        const questions = await tx.question.findMany({
+          where: { sectionId: { in: sectionIds } },
+          select: { id: true, matrixId: true },
+        });
+
+        const matrixIds = questions
+          .map((q) => q.matrixId)
+          .filter((m) => m !== null && m !== undefined);
+
+        // 4. Delete questions first (references sections)
+        await tx.question.deleteMany({
+          where: { sectionId: { in: sectionIds } },
+        });
+
+        // 5. Delete matrix fields
+        if (matrixIds.length > 0) {
+          await tx.matrixField.deleteMany({
+            where: { id: { in: matrixIds } },
+          });
+        }
+
+        // 6. Delete sections (references surveys)
+        await tx.section.deleteMany({
+          where: { id: { in: sectionIds } },
+        });
+      }
+
+      // 7. Delete reward logs
+      await tx.surveyRewardLog.deleteMany({
+        where: { surveyId: { in: ids } },
+      });
+
+      // 8. Delete surveys
+      const result = await tx.survey.deleteMany({
+        where: { id: { in: ids } },
+      });
+
+      return { success: true, count: result.count };
     });
   }
 

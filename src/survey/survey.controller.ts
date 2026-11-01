@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
+import { BulkSurveyDto } from './dto/bulk-survey.dto';
 import {
   ReorderSectionsDto,
   UpdateSurveyDto,
@@ -155,6 +156,26 @@ export class SurveyController {
       return await this.surveyService.getSurveyDetails(slug);
     } catch (err) {
       throw new HttpException(err.message, HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @ApiOperation({ summary: 'Bulk soft-delete surveys by IDs' })
+  @Patch('bulk-soft-delete')
+  async bulkSoftDelete(@Body() bulkSurveyDto: BulkSurveyDto) {
+    try {
+      return await this.surveyService.bulkSoftDelete(bulkSurveyDto.ids);
+    } catch (err) {
+      throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @ApiOperation({ summary: 'Bulk permanently delete surveys by IDs' })
+  @Delete('bulk')
+  async bulkRemove(@Body() bulkSurveyDto: BulkSurveyDto) {
+    try {
+      return await this.surveyService.bulkRemove(bulkSurveyDto.ids);
+    } catch (err) {
+      throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
     }
   }
 
