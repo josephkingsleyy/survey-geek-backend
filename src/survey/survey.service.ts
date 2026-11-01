@@ -1691,15 +1691,26 @@ export class SurveyService {
       );
     }
 
-    if (survey.status == SurveyStatus.TRASH) {
+    if (survey.status === SurveyStatus.TRASH) {
+      // Restore survey to its original status before trashing (or DRAFT if none recorded)
+      const restoredStatus = survey.previousStatus || SurveyStatus.DRAFT;
       return this.prisma.survey.update({
         where: { id },
-        data: { status: "DRAFT", updatedAt: new Date() },
+        data: {
+          status: restoredStatus,
+          previousStatus: null,
+          updatedAt: new Date(),
+        },
       });
     } else {
+      // Move to trash and record the current status in previousStatus
       return this.prisma.survey.update({
         where: { id },
-        data: { status: "TRASH", updatedAt: new Date() },
+        data: {
+          status: SurveyStatus.TRASH,
+          previousStatus: survey.status,
+          updatedAt: new Date(),
+        },
       });
     }
   }
@@ -1711,46 +1722,55 @@ export class SurveyService {
 
     const surveys = await this.prisma.survey.findMany({
       where: { id: { in: ids } },
-      select: { id: true, status: true },
+      select: { id: true, status: true, previousStatus: true },
     });
 
-    const validToTrash = surveys
-      .filter(
-        (s) =>
-          s.status !== SurveyStatus.PUBLISHED &&
-          s.status !== SurveyStatus.PENDING &&
-          s.status !== SurveyStatus.TRASH,
-      )
-      .map((s) => s.id);
+    const toTrash = surveys.filter(
+      (s) =>
+        s.status !== SurveyStatus.PUBLISHED &&
+        s.status !== SurveyStatus.PENDING &&
+        s.status !== SurveyStatus.TRASH,
+    );
 
-    const validToDraft = surveys
-      .filter((s) => s.status === SurveyStatus.TRASH)
-      .map((s) => s.id);
+    const toRestore = surveys.filter((s) => s.status === SurveyStatus.TRASH);
 
     return this.prisma.$transaction(async (tx) => {
-      if (validToTrash.length > 0) {
-        await tx.survey.updateMany({
-          where: { id: { in: validToTrash } },
-          data: { status: SurveyStatus.TRASH, updatedAt: new Date() },
+      // 1. Move to trash and record their current status
+      for (const item of toTrash) {
+        await tx.survey.update({
+          where: { id: item.id },
+          data: {
+            status: SurveyStatus.TRASH,
+            previousStatus: item.status,
+            updatedAt: new Date(),
+          },
         });
       }
 
-      if (validToDraft.length > 0) {
-        await tx.survey.updateMany({
-          where: { id: { in: validToDraft } },
-          data: { status: SurveyStatus.DRAFT, updatedAt: new Date() },
+      // 2. Restore to their previous status (or DRAFT if none recorded)
+      for (const item of toRestore) {
+        const restoredStatus = item.previousStatus || SurveyStatus.DRAFT;
+        await tx.survey.update({
+          where: { id: item.id },
+          data: {
+            status: restoredStatus,
+            previousStatus: null,
+            updatedAt: new Date(),
+          },
         });
       }
 
-      const publishedCount = surveys.filter(
-        (s) => s.status === SurveyStatus.PUBLISHED,
+      const lockedCount = surveys.filter(
+        (s) =>
+          s.status === SurveyStatus.PUBLISHED ||
+          s.status === SurveyStatus.PENDING,
       ).length;
 
       return {
         success: true,
-        trashedCount: validToTrash.length,
-        restoredCount: validToDraft.length,
-        ignoredPublishedCount: publishedCount,
+        trashedCount: toTrash.length,
+        restoredCount: toRestore.length,
+        ignoredLockedCount: lockedCount,
       };
     });
   }
