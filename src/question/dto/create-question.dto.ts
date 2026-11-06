@@ -86,6 +86,13 @@ export class MatrixFieldDto {
   data?: string[][];
 }
 
+export enum MultipleChoiceOptionSelectionRule {
+  ANY = 'ANY',
+  AT_LEAST = 'AT_LEAST',
+  AT_MOST = 'AT_MOST',
+  EXACTLY = 'EXACTLY',
+}
+
 export enum QuestionStatusDto {
   DRAFT = 'DRAFT',
   PUBLISH = 'PUBLISH',
@@ -148,6 +155,20 @@ export class CreateQuestionDto {
   @IsString()
   timeFormat?: string;
 
+  @ApiPropertyOptional({
+    example: 'ANY',
+    enum: MultipleChoiceOptionSelectionRule,
+    description: 'Selection rule for MULTIPLE_CHOICE options: ANY | AT_LEAST | AT_MOST | EXACTLY',
+  })
+  @IsOptional()
+  @IsString()
+  multipleChoiceOptionSelectionRule?: string;
+
+  @ApiPropertyOptional({ example: 2, description: 'Selection count when rule is EXACTLY, AT_LEAST, or AT_MOST' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionSelectionCount?: number;
+
   @ApiPropertyOptional({ example: 'Rate from 1 to 5 stars.' })
   @IsOptional()
   @IsString()
@@ -205,4 +226,14 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsString()
   branchCondition?: string;
+
+  @ApiPropertyOptional({ example: 'Please revise this question text.' })
+  @IsOptional()
+  @IsString()
+  reviewComment?: string;
+
+  @ApiPropertyOptional({ example: [], description: 'Review comments trail for this question' })
+  @IsOptional()
+  @IsArray()
+  reviewComments?: any[];
 }

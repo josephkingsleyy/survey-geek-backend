@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
   BadRequestException,
   HttpException,
@@ -144,6 +145,8 @@ export class SurveyService {
                 allowTime: q.allowTime ?? false,
                 allowedRange: q.allowedRange ?? null,
                 timeFormat: q.timeFormat ?? '24_HOUR',
+                multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
+                multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
                 levels: q.levels ?? 5,
                 symbol: q.symbol ?? 'star',
                 statements: q.statements ?? [],
@@ -218,6 +221,7 @@ export class SurveyService {
       pending?: any;
       draft?: any;
     } = {},
+    user?: any,
   ) {
     const skip = (page - 1) * limit;
     const {
@@ -262,20 +266,39 @@ export class SurveyService {
       };
     }
 
-    const whereClause = { ...baseWhere };
+    const currentUserId = user?.userId || user?.sub || user?.id;
+    const whereClause: any = { ...baseWhere };
 
     if (status) {
       whereClause.status = status;
+      if (status === SurveyStatus.DRAFT && currentUserId) {
+        whereClause.userId = currentUserId;
+      } else if (status === SurveyStatus.TRASH && currentUserId) {
+        whereClause.userId = currentUserId;
+      }
     } else if (published === 'true' || published === true) {
       whereClause.status = SurveyStatus.PUBLISHED;
     } else if (completed === 'true' || completed === true) {
       whereClause.status = SurveyStatus.COMPLETED;
     } else if (trash === 'true' || trash === true) {
       whereClause.status = SurveyStatus.TRASH;
+      if (currentUserId) whereClause.userId = currentUserId;
     } else if (pending === 'true' || pending === true) {
       whereClause.status = SurveyStatus.PENDING;
     } else if (draft === 'true' || draft === true) {
       whereClause.status = SurveyStatus.DRAFT;
+      if (currentUserId) whereClause.userId = currentUserId;
+    } else {
+      // "All Surveys" tab: exclude TRASH, and exclude other users' DRAFTs
+      whereClause.status = { not: SurveyStatus.TRASH };
+      whereClause.AND = [
+        {
+          OR: [
+            { status: { not: SurveyStatus.DRAFT } },
+            ...(currentUserId ? [{ userId: currentUserId, status: SurveyStatus.DRAFT }] : []),
+          ],
+        },
+      ];
     }
 
 
@@ -298,7 +321,7 @@ export class SurveyService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.survey.count(),
+      this.prisma.survey.count({ where: whereClause }),
 
       this.prisma.survey.groupBy({
         by: ['status'],
@@ -522,14 +545,59 @@ export class SurveyService {
   // survey.service.ts
 
   async getSurveyCounts(user: any) {
+    const currentUserId = user?.userId || user?.sub || user?.id;
 
-    // Admin sees everything
-    const whereClause =
-      user.role === 'Admin'
-        ? {}
-        : {
-          userId: user?.userId || user?.sub,
-        };
+    if (user?.role === 'Admin') {
+      const [allStatusCounts, adminDraftCount, adminTrashCount] = await Promise.all([
+        this.prisma.survey.groupBy({
+          by: ['status'],
+          where: {
+            status: { in: [SurveyStatus.PUBLISHED, SurveyStatus.COMPLETED, SurveyStatus.PENDING, SurveyStatus.REJECTED] },
+          },
+          _count: { status: true },
+        }),
+        this.prisma.survey.count({
+          where: { status: SurveyStatus.DRAFT, userId: currentUserId },
+        }),
+        this.prisma.survey.count({
+          where: { status: SurveyStatus.TRASH, userId: currentUserId },
+        }),
+      ]);
+
+      const countMap = {
+        draftCount: adminDraftCount,
+        publishedCount: 0,
+        pausedCount: 0,
+        completedCount: 0,
+        pendingCount: 0,
+        trashedCount: adminTrashCount,
+      };
+
+      const statusKeyMap = {
+        PUBLISHED: 'publishedCount',
+        COMPLETED: 'completedCount',
+        PENDING: 'pendingCount',
+      };
+
+      allStatusCounts.forEach((item) => {
+        const key = statusKeyMap[item.status];
+        if (key) {
+          countMap[key] = item._count.status;
+        }
+      });
+
+      const rejectedCount = allStatusCounts.find((s) => s.status === SurveyStatus.REJECTED)?._count?.status || 0;
+      const total = countMap.publishedCount + countMap.completedCount + countMap.pendingCount + rejectedCount + countMap.draftCount;
+
+      return {
+        total,
+        ...countMap,
+      };
+    }
+
+    const whereClause = {
+      userId: currentUserId,
+    };
 
     const statusCounts = await this.prisma.survey.groupBy({
       by: ['status'],
@@ -1014,23 +1082,31 @@ export class SurveyService {
             price: parseFloat(price as string),
           }),
 
-          // Record approval and clear previous rejection metadata.
-          ...(isPublishing && {
-            approvedById: sub!,
-            rejectedById: null,
-            rejectionReason: null,
-          }),
-
-          // Record rejection and clear previous approval metadata.
-          ...(isRejecting && {
-            rejectedById: sub!,
-            approvedById: null,
+          // Record review decision metadata.
+          ...((isPublishing || isRejecting) && {
+            reviewerId: sub!,
+            reviewedAt: new Date(),
+            ...(isPublishing && { rejectionReason: null }),
+            ...(isRejecting && {
+              rejectionHistory: [
+                ...((Array.isArray((existingSurvey as any).rejectionHistory)
+                  ? ((existingSurvey as any).rejectionHistory as any[])
+                  : [])),
+                {
+                  id: randomUUID(),
+                  reason:
+                    surveyData.rejectionReason ||
+                    'Survey rejected due to not meeting required standards!',
+                  reviewerId: sub,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }),
           }),
         },
         include: {
           user: true,
-          approvedBy: true,
-          rejectedBy: true,
+          reviewer: true,
           surveyInterests: true,
         },
       });
@@ -1059,8 +1135,7 @@ export class SurveyService {
           },
           include: {
             user: true,
-            approvedBy: true,
-            rejectedBy: true,
+            reviewer: true,
             surveyInterests: true,
           },
         });
@@ -1183,13 +1258,13 @@ export class SurveyService {
       if (isRejecting) {
         const rejectorName =
           [
-            updatedSurvey.rejectedBy?.firstName,
-            updatedSurvey.rejectedBy?.lastName,
+            updatedSurvey.reviewer?.firstName,
+            updatedSurvey.reviewer?.lastName,
           ]
             .filter(Boolean)
             .join(' ') ||
-          updatedSurvey.rejectedBy?.username ||
-          updatedSurvey.rejectedBy?.email ||
+          updatedSurvey.reviewer?.username ||
+          updatedSurvey.reviewer?.email ||
           'An administrator';
 
         const reason = updatedSurvey.rejectionReason
@@ -1390,6 +1465,8 @@ export class SurveyService {
                   allowTime: q.allowTime ?? false,
                   allowedRange: q.allowedRange ?? null,
                   timeFormat: q.timeFormat ?? '24_HOUR',
+                  multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
+                  multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
                   levels: q.levels ?? 5,
                   symbol: q.symbol ?? 'star',
                   statements: q.statements ?? [],
@@ -1415,6 +1492,8 @@ export class SurveyService {
                   allowTime: q.allowTime ?? false,
                   allowedRange: q.allowedRange ?? null,
                   timeFormat: q.timeFormat ?? '24_HOUR',
+                  multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
+                  multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
                   levels: q.levels ?? 5,
                   symbol: q.symbol ?? 'star',
                   statements: q.statements ?? [],
@@ -1528,6 +1607,8 @@ export class SurveyService {
               required: q.required ?? false,
               scaleMin: q.scaleMin,
               scaleMax: q.scaleMax,
+              multipleChoiceOptionSelectionRule: q.multipleChoiceOptionSelectionRule ?? null,
+              multipleChoiceOptionSelectionCount: q.multipleChoiceOptionSelectionCount ?? null,
             };
 
             if (q.id && q.id < 2147483647) {
@@ -1600,23 +1681,99 @@ export class SurveyService {
 
     if (survey.status === SurveyStatus.PUBLISHED) {
       throw new BadRequestException(
-        'Published surveys cannot be moved to trash',
+        "Published surveys cannot be moved to trash",
       );
     }
 
-    if (survey.status == SurveyStatus.TRASH) {
+    if (survey.status === SurveyStatus.PENDING) {
+      throw new BadRequestException(
+        "Surveys pending review cannot be moved to trash",
+      );
+    }
+
+    if (survey.status === SurveyStatus.TRASH) {
+      // Restore survey to its original status before trashing (or DRAFT if none recorded)
+      const restoredStatus = survey.previousStatus || SurveyStatus.DRAFT;
       return this.prisma.survey.update({
         where: { id },
-        data: { status: 'DRAFT', updatedAt: new Date() },
+        data: {
+          status: restoredStatus,
+          previousStatus: null,
+          updatedAt: new Date(),
+        },
       });
     } else {
+      // Move to trash and record the current status in previousStatus
       return this.prisma.survey.update({
         where: { id },
-        data: { status: 'TRASH', updatedAt: new Date() },
+        data: {
+          status: SurveyStatus.TRASH,
+          previousStatus: survey.status,
+          updatedAt: new Date(),
+        },
       });
     }
   }
 
+  async bulkSoftDelete(ids: number[]) {
+    if (!ids || ids.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    const surveys = await this.prisma.survey.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, status: true, previousStatus: true },
+    });
+
+    const toTrash = surveys.filter(
+      (s) =>
+        s.status !== SurveyStatus.PUBLISHED &&
+        s.status !== SurveyStatus.PENDING &&
+        s.status !== SurveyStatus.TRASH,
+    );
+
+    const toRestore = surveys.filter((s) => s.status === SurveyStatus.TRASH);
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Move to trash and record their current status
+      for (const item of toTrash) {
+        await tx.survey.update({
+          where: { id: item.id },
+          data: {
+            status: SurveyStatus.TRASH,
+            previousStatus: item.status,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      // 2. Restore to their previous status (or DRAFT if none recorded)
+      for (const item of toRestore) {
+        const restoredStatus = item.previousStatus || SurveyStatus.DRAFT;
+        await tx.survey.update({
+          where: { id: item.id },
+          data: {
+            status: restoredStatus,
+            previousStatus: null,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      const lockedCount = surveys.filter(
+        (s) =>
+          s.status === SurveyStatus.PUBLISHED ||
+          s.status === SurveyStatus.PENDING,
+      ).length;
+
+      return {
+        success: true,
+        trashedCount: toTrash.length,
+        restoredCount: toRestore.length,
+        ignoredLockedCount: lockedCount,
+      };
+    });
+  }
 
   async remove(id: number) {
     const survey = await this.prisma.survey.findUnique({ where: { id } });
@@ -1624,14 +1781,115 @@ export class SurveyService {
       throw new NotFoundException(`Survey with ID ${id} not found`);
     }
 
-    // delete children first
-    await this.prisma.section.deleteMany({ where: { surveyId: id } });
-    await this.prisma.question.deleteMany({
-      where: { section: { surveyId: id } },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Delete responses belonging to this survey
+      await tx.response.deleteMany({ where: { surveyId: id } });
 
-    // now delete survey
-    return this.prisma.survey.delete({ where: { id } });
+      // 2. Find sections
+      const sections = await tx.section.findMany({
+        where: { surveyId: id },
+        select: { id: true },
+      });
+      const sectionIds = sections.map((s) => s.id);
+
+      if (sectionIds.length > 0) {
+        // 3. Find questions and matrix fields
+        const questions = await tx.question.findMany({
+          where: { sectionId: { in: sectionIds } },
+          select: { id: true, matrixId: true },
+        });
+
+        const matrixIds = questions
+          .map((q) => q.matrixId)
+          .filter((m) => m !== null && m !== undefined);
+
+        // 4. Delete questions first (child of section, parent of matrixId)
+        await tx.question.deleteMany({
+          where: { sectionId: { in: sectionIds } },
+        });
+
+        // 5. Delete matrix fields
+        if (matrixIds.length > 0) {
+          await tx.matrixField.deleteMany({
+            where: { id: { in: matrixIds } },
+          });
+        }
+
+        // 6. Delete sections (child of survey)
+        await tx.section.deleteMany({
+          where: { surveyId: id },
+        });
+      }
+
+      // 7. Delete reward logs
+      await tx.surveyRewardLog.deleteMany({
+        where: { surveyId: id },
+      });
+
+      // 8. Finally delete survey
+      return tx.survey.delete({ where: { id } });
+    });
+  }
+
+  async bulkRemove(ids: number[]) {
+    if (!ids || ids.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Delete all responses for these surveys
+      await tx.response.deleteMany({
+        where: { surveyId: { in: ids } },
+      });
+
+      // 2. Find all sections for these surveys
+      const sections = await tx.section.findMany({
+        where: { surveyId: { in: ids } },
+        select: { id: true },
+      });
+      const sectionIds = sections.map((s) => s.id);
+
+      if (sectionIds.length > 0) {
+        // 3. Find questions and their matrix fields
+        const questions = await tx.question.findMany({
+          where: { sectionId: { in: sectionIds } },
+          select: { id: true, matrixId: true },
+        });
+
+        const matrixIds = questions
+          .map((q) => q.matrixId)
+          .filter((m) => m !== null && m !== undefined);
+
+        // 4. Delete questions first (references sections)
+        await tx.question.deleteMany({
+          where: { sectionId: { in: sectionIds } },
+        });
+
+        // 5. Delete matrix fields
+        if (matrixIds.length > 0) {
+          await tx.matrixField.deleteMany({
+            where: { id: { in: matrixIds } },
+          });
+        }
+
+        // 6. Delete sections (references surveys)
+        await tx.section.deleteMany({
+          where: { id: { in: sectionIds } },
+        });
+      }
+
+      // 7. Delete reward logs
+      await tx.surveyRewardLog.deleteMany({
+        where: { surveyId: { in: ids } },
+      });
+
+      // 8. Delete surveys
+      const result = await tx.survey.deleteMany({
+        where: { id: { in: ids } },
+      });
+
+      return { success: true, count: result.count };
+    });
   }
 
   async publishSurvey(id: number, userId: number) {

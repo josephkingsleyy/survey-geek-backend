@@ -61,6 +61,20 @@ export class CreateQuestionAlongDto {
   @IsString()
   timeFormat?: string;
 
+  @ApiPropertyOptional({
+    example: 'ANY',
+    enum: ['ANY', 'AT_LEAST', 'AT_MOST', 'EXACTLY'],
+    description: 'Selection rule for MULTIPLE_CHOICE options: ANY | AT_LEAST | AT_MOST | EXACTLY',
+  })
+  @IsOptional()
+  @IsString()
+  multipleChoiceOptionSelectionRule?: string;
+
+  @ApiPropertyOptional({ example: 2, description: 'Selection count when rule is EXACTLY, AT_LEAST, or AT_MOST' })
+  @IsOptional()
+  @IsInt()
+  multipleChoiceOptionSelectionCount?: number;
+
   @ApiPropertyOptional({ example: 5 })
   @IsOptional()
   @IsInt()
@@ -230,4 +244,24 @@ export class CreateSurveyDto {
   @IsOptional()
   @IsInt()
   dataSensitivity?: number;
+
+  @ApiPropertyOptional({ example: 'Thank you for completing the survey.' })
+  @IsOptional()
+  @IsString()
+  feedbackTitle?: string;
+
+  @ApiPropertyOptional({ example: 'Your responses have been recorded successfully.' })
+  @IsOptional()
+  @IsString()
+  feedbackMessage?: string;
+
+  @ApiPropertyOptional({ example: true, default: true })
+  @IsOptional()
+  @IsBoolean()
+  showResponseSummary?: boolean;
+
+  @ApiPropertyOptional({ example: [], description: 'Rejection history audit trail' })
+  @IsOptional()
+  @IsArray()
+  rejectionHistory?: any[];
 }
